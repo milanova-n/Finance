@@ -1,34 +1,44 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type FormEvent,
+  type MouseEvent,
+} from 'react';
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableFooter from '@mui/material/TableFooter';
-import TableHead from '@mui/material/TableHead';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
+import AddIcon from '@mui/icons-material/Add';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import AccountBalanceOutlinedIcon from '@mui/icons-material/AccountBalanceOutlined';
+import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
+import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
+import SavingsOutlinedIcon from '@mui/icons-material/SavingsOutlined';
+import type { SvgIconComponent } from '@mui/icons-material';
 import { api } from '../lib/api';
 import { money } from '../lib/format';
 import {
   ACCOUNT_KINDS,
-  accountKindLabel,
   type Account,
   type AccountKind,
 } from '../lib/types';
-import { EmptyState, FormDialog, Loading, AlertSlot } from '../components/ui';
+import { FormDialog, Loading, AlertSlot } from '../components/ui';
 import {
   Amount,
-  CategoryChip,
   FormActions,
   FormGrid,
   Lede,
   PageHeader,
   PageTitle,
-  RowActions,
 } from '../theme/shared.styles';
-import { LedgerRow, PaddedCard, TableCard, TotalsRow } from './Accounts.styles';
 
 type Draft = {
   name: string;
@@ -44,6 +54,23 @@ const BLANK: Draft = {
   openingBalance: '0',
 };
 
+const KIND_ICONS: Record<AccountKind, SvgIconComponent> = {
+  cash: AccountBalanceWalletOutlinedIcon,
+  bank: AccountBalanceOutlinedIcon,
+  card: CreditCardOutlinedIcon,
+  savings: SavingsOutlinedIcon,
+};
+
+const accountGridSx = {
+  display: 'grid',
+  gridTemplateColumns: {
+    xs: 'minmax(0, 1fr)',
+    sm: 'repeat(2, minmax(0, 1fr))',
+    md: 'repeat(3, minmax(0, 1fr))',
+  },
+  gap: 2,
+} as const;
+
 export function Accounts() {
   const [accounts, setAccounts] = useState<Account[] | null>(null);
   const [error, setError] = useState('');
@@ -52,6 +79,8 @@ export function Accounts() {
   const [draft, setDraft] = useState<Draft>(BLANK);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const [menuAccount, setMenuAccount] = useState<Account | null>(null);
 
   const load = useCallback(() => {
     api<Account[]>('/accounts')
@@ -69,6 +98,7 @@ export function Accounts() {
   }
 
   function openEdit(account: Account) {
+    closeMenu();
     setEditing(account);
     setDraft({
       name: account.name,
@@ -78,6 +108,17 @@ export function Accounts() {
     });
     setFormError('');
     setOpen(true);
+  }
+
+  function openMenu(event: MouseEvent<HTMLElement>, account: Account) {
+    event.stopPropagation();
+    setMenuAnchor(event.currentTarget);
+    setMenuAccount(account);
+  }
+
+  function closeMenu() {
+    setMenuAnchor(null);
+    setMenuAccount(null);
   }
 
   async function save(event: FormEvent) {
@@ -106,6 +147,7 @@ export function Accounts() {
   }
 
   async function remove(account: Account) {
+    closeMenu();
     if (!confirm(`Delete ${account.name}? This cannot be undone.`)) return;
     try {
       await api(`/accounts/${account.id}`, { method: 'DELETE' });
@@ -127,100 +169,194 @@ export function Accounts() {
     <>
       <PageHeader>
         <div>
-          <PageTitle component="h1">Accounts</PageTitle>
+          <PageTitle component="h1">Accounts ({money(total, currency)})</PageTitle>
           <Lede variant="body2">
             Each balance is your opening amount plus everything in, minus
             everything out.
           </Lede>
         </div>
-        <Button variant="contained" onClick={openNew}>
-          Add account
-        </Button>
       </PageHeader>
 
-      {accounts.length === 0 ? (
-        <PaddedCard>
-          <EmptyState
-            title="No accounts yet"
-            hint="Add a cash wallet, a bank account or a card to start tracking."
-            action={
-              <Button variant="contained" onClick={openNew}>
-                Add account
-              </Button>
+      <Button
+        variant="contained"
+        startIcon={<AddIcon />}
+        onClick={openNew}
+        fullWidth
+        sx={{ display: { xs: 'inline-flex', sm: 'none' }, mb: 2 }}
+      >
+        Add account
+      </Button>
+
+      <Box sx={accountGridSx}>
+        {accounts.map((account) => {
+          const KindIcon = KIND_ICONS[account.kind];
+          return (
+            <Card
+              key={account.id}
+              variant="outlined"
+              sx={{
+                p: 2.5,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+              }}
+            >
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'flex-start' }}>
+                <Box
+                  aria-hidden
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    flexShrink: 0,
+                    display: 'grid',
+                    placeItems: 'center',
+                    borderRadius: 1,
+                    bgcolor: 'app.sunken',
+                    color: 'primary.main',
+                    '& .MuiSvgIcon-root': { fontSize: 24 },
+                  }}
+                >
+                  <KindIcon />
+                </Box>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography
+                    variant="subtitle1"
+                    title={account.name}
+                    sx={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  >
+                    {account.name}
+                  </Typography>
+                </Box>
+                <IconButton
+                  size="small"
+                  aria-label={`Actions for ${account.name}`}
+                  onClick={(e) => openMenu(e, account)}
+                >
+                  <MoreVertIcon fontSize="small" />
+                </IconButton>
+              </Stack>
+
+              <Stack spacing={1}>
+                <Stack
+                  direction="row"
+                  sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}
+                >
+                  <Typography variant="caption" color="text.secondary">
+                    Opening balance
+                  </Typography>
+                  <Amount component="span" color="text.secondary">
+                    {money(account.openingBalance, account.currency)}
+                  </Amount>
+                </Stack>
+                <Stack
+                  direction="row"
+                  sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}
+                >
+                  <Typography variant="caption" color="text.secondary">
+                    Income
+                  </Typography>
+                  <Amount component="span" strong>
+                    {money(account.balance, account.currency)}
+                  </Amount>
+                </Stack>
+                <Stack
+                  direction="row"
+                  sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}
+                >
+                  <Typography variant="caption" color="text.secondary">
+                    Outcome
+                  </Typography>
+                  <Amount component="span" strong>
+                    {money(account.balance, account.currency)}
+                  </Amount>
+                </Stack>
+                <Stack
+                  direction="row"
+                  sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}
+                >
+                  <Typography variant="caption" color="text.secondary">
+                    Cashflow
+                  </Typography>
+                  <Amount component="span" strong>
+                    {money(account.balance, account.currency)}
+                  </Amount>
+                </Stack>
+                <Divider />
+                <Stack
+                  direction="row"
+                  sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}
+                >
+                  <Typography variant="caption" color="text.secondary">
+                    Current balance
+                  </Typography>
+                  <Amount component="span" strong>
+                    {money(account.balance, account.currency)}
+                  </Amount>
+                </Stack>
+              </Stack>
+            </Card>
+          );
+        })}
+
+        <Card
+          variant="outlined"
+          role="button"
+          tabIndex={0}
+          onClick={openNew}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openNew();
             }
-          />
-        </PaddedCard>
-      ) : (
-        <TableCard>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <LedgerRow>
-                  <TableCell>Account</TableCell>
-                  <TableCell>Type</TableCell>
-                  <TableCell align="right">Opening</TableCell>
-                  <TableCell align="right">In</TableCell>
-                  <TableCell align="right">Out</TableCell>
-                  <TableCell align="right">Balance</TableCell>
-                  <TableCell />
-                </LedgerRow>
-              </TableHead>
-              <TableBody>
-                {accounts.map((account) => (
-                  <LedgerRow key={account.id} hover>
-                    <TableCell>{account.name}</TableCell>
-                    <TableCell>
-                      <CategoryChip
-                        label={accountKindLabel(account.kind)}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <Amount component="span" color="text.secondary">
-                        {money(account.openingBalance, account.currency)}
-                      </Amount>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Amount component="span" flow="earn">
-                        {money(account.incomeTotal, account.currency)}
-                      </Amount>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Amount component="span" flow="spend">
-                        {money(account.expenseTotal, account.currency)}
-                      </Amount>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Amount component="span" strong>
-                        {money(account.balance, account.currency)}
-                      </Amount>
-                    </TableCell>
-                    <TableCell>
-                      <RowActions>
-                        <Button onClick={() => openEdit(account)}>Edit</Button>
-                        <Button color="error" onClick={() => remove(account)}>
-                          Delete
-                        </Button>
-                      </RowActions>
-                    </TableCell>
-                  </LedgerRow>
-                ))}
-              </TableBody>
-              <TableFooter>
-                <TotalsRow>
-                  <TableCell colSpan={5}>Total across accounts</TableCell>
-                  <TableCell align="right">
-                    <Amount component="span" strong color="text.primary">
-                      {money(total, currency)}
-                    </Amount>
-                  </TableCell>
-                  <TableCell />
-                </TotalsRow>
-              </TableFooter>
-            </Table>
-          </TableContainer>
-        </TableCard>
-      )}
+          }}
+          sx={(theme) => ({
+            p: 2.5,
+            minHeight: 168,
+            height: '100%',
+            cursor: 'pointer',
+            display: { xs: 'none', sm: 'flex' },
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 1,
+            borderStyle: 'dashed',
+            bgcolor: 'transparent',
+            boxShadow: 'none',
+            transition: theme.transitions.create(
+              ['border-color', 'background-color'],
+              { duration: theme.transitions.duration.shorter }
+            ),
+            '&:hover': {
+              borderColor: 'primary.main',
+              bgcolor: 'app.sunken',
+            },
+          })}
+        >
+          <AddIcon color="primary" fontSize="large" />
+          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+            Add account
+          </Typography>
+        </Card>
+      </Box>
+
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={closeMenu}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MenuItem onClick={() => menuAccount && openEdit(menuAccount)}>
+          Edit
+        </MenuItem>
+        <MenuItem
+          onClick={() => menuAccount && remove(menuAccount)}
+          sx={{ color: 'error.main' }}
+        >
+          Delete
+        </MenuItem>
+      </Menu>
 
       <FormDialog
         open={open}
@@ -253,6 +389,7 @@ export function Accounts() {
                 setDraft({ ...draft, kind: e.target.value as AccountKind })
               }
               size="small"
+              disabled={editing !== null}
             >
               {ACCOUNT_KINDS.map((kind) => (
                 <MenuItem key={kind.value} value={kind.value}>
@@ -269,6 +406,7 @@ export function Accounts() {
               }
               size="small"
               required
+              disabled={editing !== null}
               slotProps={{ htmlInput: { maxLength: 3 } }}
             />
 

@@ -35,8 +35,3 @@ export const ACCOUNT_KINDS: Array<{ value: AccountKind; label: string }> = [
   { value: 'card', label: 'Card' },
   { value: 'savings', label: 'Savings' },
 ];
-
-/** Never show the stored enum value to a person. */
-export function accountKindLabel(kind: AccountKind): string {
-  return ACCOUNT_KINDS.find((k) => k.value === kind)?.label ?? kind;
-}
