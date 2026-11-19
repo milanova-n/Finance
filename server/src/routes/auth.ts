@@ -3,27 +3,12 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { one, transaction } from '../db.js';
 import { requireAuth, signToken } from '../auth.js';
+import {
+  DEFAULT_EXPENSE_CATEGORIES,
+  DEFAULT_INCOME_CATEGORIES,
+} from '../catalogDefaults.js';
 
 export const authRouter = Router();
-
-const DEFAULT_EXPENSE_CATEGORIES = [
-  'Car',
-  'Laundry',
-  'Groceries',
-  'Rent',
-  'Utilities',
-  'Eating out',
-  'Travel',
-  'Health',
-];
-
-const DEFAULT_INCOME_CATEGORIES = [
-  'Salary',
-  'Freelance',
-  'Gift',
-  'Refund',
-  'Interest',
-];
 
 const registerSchema = z.object({
   fullName: z.string().trim().min(1, 'Enter your name.').max(120),
@@ -92,7 +77,6 @@ authRouter.post('/register', async (req, res, next) => {
           [created.id, name]
         );
       }
-
       return created;
     });
 

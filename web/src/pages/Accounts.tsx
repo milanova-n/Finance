@@ -23,14 +23,23 @@ import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalance
 import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
 import SavingsOutlinedIcon from '@mui/icons-material/SavingsOutlined';
 import type { SvgIconComponent } from '@mui/icons-material';
-import { api } from '../lib/api';
-import { money } from '../lib/format';
+import { api } from '../services/api';
+import {
+  accountCashMovementStats,
+  accountCashflowAmount,
+  accountDisplayBalance,
+  formatLatestAccountActivity,
+  latestAccountActivity,
+} from '../utils/accountStats';
+import { money } from '../utils/format';
 import {
   ACCOUNT_KINDS,
   type Account,
   type AccountKind,
-} from '../lib/types';
-import { FormDialog, Loading, AlertSlot } from '../components/ui';
+} from '../types';
+import { AlertSlot } from '../components/common/AlertSlot.styles';
+import { FormDialog } from '../components/common/FormDialog';
+import { Loading } from '../components/common/Loading';
 import {
   Amount,
   FormActions,
@@ -38,7 +47,7 @@ import {
   Lede,
   PageHeader,
   PageTitle,
-} from '../theme/shared.styles';
+} from '../styles/shared.styles';
 
 type Draft = {
   name: string;
@@ -57,8 +66,6 @@ const BLANK: Draft = {
 const KIND_ICONS: Record<AccountKind, SvgIconComponent> = {
   cash: AccountBalanceWalletOutlinedIcon,
   bank: AccountBalanceOutlinedIcon,
-  card: CreditCardOutlinedIcon,
-  savings: SavingsOutlinedIcon,
 };
 
 const accountGridSx = {
@@ -70,6 +77,46 @@ const accountGridSx = {
   },
   gap: 2,
 } as const;
+
+function AccountStatRow({
+  label,
+  amount,
+  currency,
+  activityDates,
+  flow,
+}: {
+  label: string;
+  amount: number;
+  currency: string;
+  activityDates?: string | null;
+  flow?: 'earn' | 'spend' | 'neutral';
+}) {
+  return (
+    <Stack
+      direction="row"
+      sx={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}
+    >
+      <Box sx={{ minWidth: 0 }}>
+        <Typography variant="caption" color="text.secondary">
+          {label}
+        </Typography>
+        {activityDates ? (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            component="div"
+            sx={{ opacity: 0.85, lineHeight: 1.3 }}
+          >
+            {activityDates}
+          </Typography>
+        ) : null}
+      </Box>
+      <Amount component="span" strong flow={flow} sx={{ flexShrink: 0 }}>
+        {money(amount, currency)} 
+      </Amount>
+    </Stack>
+  );
+}
 
 export function Accounts() {
   const [accounts, setAccounts] = useState<Account[] | null>(null);
@@ -162,8 +209,11 @@ export function Accounts() {
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!accounts) return <Loading label="Loading your accounts" />;
 
-  const total = accounts.reduce((sum, account) => sum + account.balance, 0);
   const currency = accounts[0]?.currency ?? 'EUR';
+  const total = accounts.reduce((sum, account) => {
+    const cash = accountCashMovementStats(account.id);
+    return sum + accountDisplayBalance(account, cash);
+  }, 0);
 
   return (
     <>
@@ -190,6 +240,13 @@ export function Accounts() {
       <Box sx={accountGridSx}>
         {accounts.map((account) => {
           const KindIcon = KIND_ICONS[account.kind];
+          const cash = accountCashMovementStats(account.id);
+          const lastActivity = formatLatestAccountActivity(
+            latestAccountActivity(account, cash)
+          );
+          const cashflow = accountCashflowAmount(cash);
+          const currentBalance = accountDisplayBalance(account, cash);
+
           return (
             <Card
               key={account.id}
@@ -249,51 +306,30 @@ export function Accounts() {
                     {money(account.openingBalance, account.currency)}
                   </Amount>
                 </Stack>
-                <Stack
-                  direction="row"
-                  sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}
-                >
-                  <Typography variant="caption" color="text.secondary">
-                    Income
-                  </Typography>
-                  <Amount component="span" strong>
-                    {money(account.balance, account.currency)}
-                  </Amount>
-                </Stack>
-                <Stack
-                  direction="row"
-                  sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}
-                >
-                  <Typography variant="caption" color="text.secondary">
-                    Outcome
-                  </Typography>
-                  <Amount component="span" strong>
-                    {money(account.balance, account.currency)}
-                  </Amount>
-                </Stack>
-                <Stack
-                  direction="row"
-                  sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}
-                >
-                  <Typography variant="caption" color="text.secondary">
-                    Cashflow
-                  </Typography>
-                  <Amount component="span" strong>
-                    {money(account.balance, account.currency)}
-                  </Amount>
-                </Stack>
+                <AccountStatRow
+                  label="Income"
+                  amount={account.incomeTotal}
+                  currency={account.currency}
+                  flow="earn"
+                />
+                <AccountStatRow
+                  label="Expense"
+                  amount={account.expenseTotal}
+                  currency={account.currency}
+                  flow="spend"
+                />
+                <AccountStatRow
+                  label="Cashflow"
+                  amount={cashflow}
+                  currency={account.currency}
+                />
                 <Divider />
-                <Stack
-                  direction="row"
-                  sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}
-                >
-                  <Typography variant="caption" color="text.secondary">
-                    Current balance
-                  </Typography>
-                  <Amount component="span" strong>
-                    {money(account.balance, account.currency)}
-                  </Amount>
-                </Stack>
+                <AccountStatRow
+                  label="Current balance"
+                  amount={currentBalance}
+                  currency={account.currency}
+                  activityDates={lastActivity}
+                />
               </Stack>
             </Card>
           );

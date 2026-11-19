@@ -13,3 +13,6 @@ temporary screenshots/
 
 # Design-workflow helper scripts (local tooling, not app code)
 screenshot.mjs
+
+# TypeScript build info (not needed for production)
+*.tsbuildinfo

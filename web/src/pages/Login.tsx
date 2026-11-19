@@ -4,9 +4,9 @@ import Button from '@mui/material/Button';
 import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { LogoMark } from '../components/Logo';
-import { useAuth } from '../state/AuthContext';
-import { Lede, PageTitle } from '../theme/shared.styles';
+import { LogoMark } from '../components/common/Logo';
+import { useAuth } from '../context/AuthContext';
+import { Lede, PageTitle } from '../styles/shared.styles';
 import {
   AsideWordmark,
   AuthAside,
@@ -53,14 +53,14 @@ export function Login() {
         <AsideWordmark>
           <LogoMark size={32} />
           <Typography component="span" className="aside-wordmark-text">
-            Verdant
+            MyFi
           </Typography>
         </AsideWordmark>
 
         <div>
           <AuthPitch component="h1">Every euro, accounted for.</AuthPitch>
           <AuthNote>
-            Log what you spend and what comes in, and Verdant works out where
+            Log what you spend and what comes in, and MyFi works out where
             each account actually stands.
           </AuthNote>
         </div>
@@ -123,7 +123,7 @@ export function Login() {
           </Button>
 
           <AuthSwitch>
-            {signingUp ? 'Already have an account? ' : 'New to Verdant? '}
+            {signingUp ? 'Already have an account? ' : 'New to MyFi? '}
             <Link
               component="button"
               type="button"

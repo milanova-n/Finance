@@ -17,13 +17,31 @@ const BALANCE_SQL = `
     a.opening_balance                                            AS "openingBalance",
     COALESCE(i.total, 0)                                         AS "incomeTotal",
     COALESCE(e.total, 0)                                         AS "expenseTotal",
-    a.opening_balance + COALESCE(i.total, 0) - COALESCE(e.total, 0) AS balance
+    a.opening_balance + COALESCE(i.total, 0) - COALESCE(e.total, 0) AS balance,
+    i."firstDate"                                                AS "incomeFirstDate",
+    i."lastDate"                                                 AS "incomeLastDate",
+    e."firstDate"                                                AS "expenseFirstDate",
+    e."lastDate"                                                 AS "expenseLastDate"
   FROM accounts a
   LEFT JOIN (
-    SELECT account_id, SUM(amount) AS total FROM incomes  WHERE user_id = $1 GROUP BY account_id
+    SELECT
+      account_id,
+      SUM(amount) AS total,
+      to_char(MIN(received_on), 'YYYY-MM-DD') AS "firstDate",
+      to_char(MAX(received_on), 'YYYY-MM-DD') AS "lastDate"
+    FROM incomes
+    WHERE user_id = $1
+    GROUP BY account_id
   ) i ON i.account_id = a.id
   LEFT JOIN (
-    SELECT account_id, SUM(amount) AS total FROM expenses WHERE user_id = $1 GROUP BY account_id
+    SELECT
+      account_id,
+      SUM(amount) AS total,
+      to_char(MIN(spent_on), 'YYYY-MM-DD') AS "firstDate",
+      to_char(MAX(spent_on), 'YYYY-MM-DD') AS "lastDate"
+    FROM expenses
+    WHERE user_id = $1
+    GROUP BY account_id
   ) e ON e.account_id = a.id
   WHERE a.user_id = $1
   ORDER BY a.created_at

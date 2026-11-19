@@ -9,6 +9,7 @@ import { pool } from './db.js';
 import { requireAuth } from './auth.js';
 import { authRouter } from './routes/auth.js';
 import { accountsRouter } from './routes/accounts.js';
+import { catalogRouter } from './routes/catalog.js';
 import { categoriesRouter } from './routes/categories.js';
 import { expensesRouter, incomesRouter } from './routes/entries.js';
 
@@ -29,6 +30,7 @@ app.get('/api/health', async (_req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/accounts', requireAuth, accountsRouter);
 app.use('/api/categories', requireAuth, categoriesRouter);
+app.use('/api/catalog', requireAuth, catalogRouter);
 app.use('/api/expenses', requireAuth, expensesRouter);
 app.use('/api/incomes', requireAuth, incomesRouter);
 

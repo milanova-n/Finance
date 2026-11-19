@@ -2,7 +2,7 @@ import type { ElementType } from 'react';
 import { styled } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { FONT_DISPLAY } from '../theme/tokens';
+import { FONT_DISPLAY } from '../styles/fonts';
 
 type Poly = { component?: ElementType };
 
