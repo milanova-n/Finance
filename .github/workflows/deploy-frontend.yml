@@ -1,0 +1,108 @@
+name: Deploy Frontend (Vercel)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy web to Vercel
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Validate secrets
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -z "${{ secrets.VERCEL_TOKEN }}" ] && missing+=("VERCEL_TOKEN")
+          [ -z "${{ secrets.VERCEL_ORG_ID }}" ] && missing+=("VERCEL_ORG_ID")
+          [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ] && missing+=("VERCEL_PROJECT_ID")
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Missing required secrets: ${missing[*]}"
+            echo "Add them under Settings → Secrets and variables → Actions → production."
+            exit 1
+          fi
+          echo "Required secrets are present."
+
+      - name: Install dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Build (pre-flight)
+        working-directory: web
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+      # Deploy from repo root — Vercel project Root Directory is already "web".
+      # Running vercel CLI inside web/ would resolve to web/web and fail.
+      - name: Remove stale Vercel link
+        run: rm -rf .vercel web/.vercel
+
+      - name: Deploy to Vercel
+        id: vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          url=$(npx vercel@latest deploy --prod --token "$VERCEL_TOKEN" --yes)
+          echo "deploy_url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed to: $url"
+
+      - name: Verify deployment URL
+        run: |
+          set -euo pipefail
+          DEPLOY_URL="${{ steps.vercel.outputs.deploy_url }}"
+          if [ -z "$DEPLOY_URL" ]; then
+            echo "::error::Deploy did not return a URL."
+            exit 1
+          fi
+          echo "Checking that the app responds..."
+          code=$(curl -sS -o /tmp/vercel-body.html -w "%{http_code}" --max-time 30 "$DEPLOY_URL")
+          echo "HTTP $code"
+          head -c 500 /tmp/vercel-body.html || true
+          if [ "$code" -lt 200 ] || [ "$code" -ge 400 ]; then
+            echo "::error::Deployment URL returned HTTP $code"
+            exit 1
+          fi
+          echo "Frontend is reachable."
+
+      - name: Deployment summary
+        if: success()
+        run: |
+          {
+            echo "## Frontend deployment succeeded"
+            echo ""
+            echo "- **URL:** ${{ steps.vercel.outputs.deploy_url }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Failure diagnostics
+        if: failure()
+        run: |
+          {
+            echo "## Frontend deployment failed"
+            echo ""
+            echo "1. **Root directory** — Vercel project Root Directory should be \`web\`; deploy runs from repo root"
+            echo "2. **IDs** — Vercel → Project → Settings → General → **Project ID**"
+            echo "3. **Org ID** — Vercel → Account or Team → Settings → **ID**"
+            echo "4. **Token** — [vercel.com/account/tokens](https://vercel.com/account/tokens)"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"

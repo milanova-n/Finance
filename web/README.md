@@ -1,6 +1,6 @@
 # MyFi Web
 
-Client for **MyFi**, a personal finance app. Users sign in against the API, manage accounts and ledger entries (income/expense), track cash movements between accounts, and configure catalogs. The UI is a React single-page application built with **Vite**, **TypeScript**, **Material UI (MUI)**, and **MUI X Data Grid**.
+Client for **MyFi**, a personal finance app. Users sign in against the API, manage accounts and ledger entries (income/expense), and track cash movements between accounts. The UI is a React single-page application built with **Vite**, **TypeScript**, **Material UI (MUI)**, and **MUI X Data Grid**.
 
 ## Requirements
 

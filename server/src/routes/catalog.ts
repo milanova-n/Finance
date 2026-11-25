@@ -1,5 +1,7 @@
 import { Router } from 'express';
-import { query } from '../db.js';
+import { and, eq, sql } from 'drizzle-orm';
+import { db } from '../db.js';
+import { categories } from '../db/schema.js';
 import {
   DEFAULT_EXPENSE_CATEGORIES,
   DEFAULT_INCOME_CATEGORIES,
@@ -14,16 +16,21 @@ async function insertMissingCategories(
 ) {
   let added = 0;
   for (const name of names) {
-    const exists = await query(
-      `SELECT 1 FROM categories
-       WHERE user_id = $1 AND kind = $2 AND lower(name) = lower($3)`,
-      [userId, kind, name]
-    );
-    if (exists.length > 0) continue;
-    await query(
-      `INSERT INTO categories (user_id, name, kind) VALUES ($1, $2, $3)`,
-      [userId, name, kind]
-    );
+    const [existing] = await db
+      .select({ id: categories.id })
+      .from(categories)
+      .where(
+        and(
+          eq(categories.userId, userId),
+          eq(categories.kind, kind),
+          sql`lower(${categories.name}) = lower(${name})`
+        )
+      )
+      .limit(1);
+
+    if (existing) continue;
+
+    await db.insert(categories).values({ userId, name, kind });
     added += 1;
   }
   return added;
