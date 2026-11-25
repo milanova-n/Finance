@@ -42,6 +42,19 @@ http://localhost:5050 — sign in with `admin@verdant.local` / `admin`. The
 **Verdant (local)** server is pre-registered; when it asks for the database
 password, use `verdant`.
 
+## Secret scanning (gitleaks)
+
+Every `git push` runs [gitleaks](https://github.com/gitleaks/gitleaks) over the
+full repository. The push is rejected if possible secrets are found.
+
+1. Install gitleaks once (`winget install Gitleaks.Gitleaks` on Windows, or
+   `brew install gitleaks` on macOS).
+2. From the repo root, run `npm install` once so git uses the shared hook in
+   `.githooks/` (`prepare` sets `core.hooksPath`).
+
+To scan manually without pushing: `npm run gitleaks`. Allowlisted false
+positives go in `.gitleaks.toml`.
+
 ## Deployment
 
 Production deploys run only via GitHub Actions on push to `main` (path-filtered). Vercel and Render Git auto-deploy are disabled in config

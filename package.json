@@ -5,8 +5,10 @@
   "description": "Verdant — personal finance tracker. Tooling root; the app lives in web/ and server/.",
   "type": "module",
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "gitleaks": "gitleaks git --no-banner --verbose --config .gitleaks.toml"
   },
   "devDependencies": {
     "prettier": "^3.9.9"

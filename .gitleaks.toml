@@ -1,0 +1,7 @@
+# Gitleaks config. See https://github.com/gitleaks/gitleaks.
+# Default rules apply; extend with [[allowlists]] when a finding is a known false positive.
+
+title = "MyFi gitleaks"
+
+[extend]
+useDefault = true
