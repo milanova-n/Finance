@@ -41,12 +41,12 @@ reconciliationRouter.get('/preview', async (req, res, next) => {
     const accountId = accountIdFrom(req);
     const period = String(req.query.period ?? '');
     if (!period) {
-      return res.status(400).json({ error: 'Choose a month (period=YYYY-MM).' });
+      return res
+        .status(400)
+        .json({ error: 'Choose a month (period=YYYY-MM).' });
     }
     await assertAccount(req.user!.id, accountId);
-    res.json(
-      await buildReconciliationPreview(req.user!.id, accountId, period)
-    );
+    res.json(await buildReconciliationPreview(req.user!.id, accountId, period));
   } catch (err) {
     next(err);
   }

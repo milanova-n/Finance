@@ -66,7 +66,6 @@ export const AuthNote = styled(Typography)(({ theme }) => ({
   marginTop: theme.spacing(2),
 }));
 
-
 export const AuthPanel = styled(Box)<Poly>(({ theme }) => ({
   display: 'grid',
   placeItems: 'center',

@@ -53,12 +53,9 @@ export const accounts = pgTable(
   (t) => [
     unique().on(t.userId, t.name),
     unique().on(t.userId, t.id),
-    check(
-      'accounts_kind_check',
-      sql`${t.kind} IN ('cash', 'bank')`,
-    ),
+    check('accounts_kind_check', sql`${t.kind} IN ('cash', 'bank')`),
     index('accounts_user_deleted_idx').on(t.userId, t.deletedAt),
-  ],
+  ]
 );
 
 export const categories = pgTable(
@@ -75,11 +72,8 @@ export const categories = pgTable(
   (t) => [
     unique().on(t.userId, t.kind, t.name),
     unique().on(t.userId, t.id),
-    check(
-      'categories_kind_check',
-      sql`${t.kind} IN ('expense', 'income')`,
-    ),
-  ],
+    check('categories_kind_check', sql`${t.kind} IN ('expense', 'income')`),
+  ]
 );
 
 export const expensePurposes = pgTable(
@@ -92,10 +86,7 @@ export const expensePurposes = pgTable(
     name: text('name').notNull(),
     ...timestamps,
   },
-  (t) => [
-    unique().on(t.userId, t.name),
-    unique().on(t.userId, t.id),
-  ],
+  (t) => [unique().on(t.userId, t.name), unique().on(t.userId, t.id)]
 );
 
 export const cashMovementTypes = pgTable(
@@ -108,10 +99,7 @@ export const cashMovementTypes = pgTable(
     name: text('name').notNull(),
     ...timestamps,
   },
-  (t) => [
-    unique().on(t.userId, t.name),
-    unique().on(t.userId, t.id),
-  ],
+  (t) => [unique().on(t.userId, t.name), unique().on(t.userId, t.id)]
 );
 
 export const cashMovementSubtypes = pgTable(
@@ -133,7 +121,7 @@ export const cashMovementSubtypes = pgTable(
       foreignColumns: [cashMovementTypes.userId, cashMovementTypes.id],
       name: 'cash_movement_subtypes_type_fk',
     }).onDelete('cascade'),
-  ],
+  ]
 );
 
 export const customFieldDefinitions = pgTable(
@@ -153,13 +141,13 @@ export const customFieldDefinitions = pgTable(
     unique().on(t.userId, t.appliesTo, t.fieldKey),
     check(
       'custom_fields_applies_to_check',
-      sql`${t.appliesTo} IN ('expense', 'income')`,
+      sql`${t.appliesTo} IN ('expense', 'income')`
     ),
     check(
       'custom_fields_type_check',
-      sql`${t.fieldType} IN ('string', 'date', 'number', 'boolean')`,
+      sql`${t.fieldType} IN ('string', 'date', 'number', 'boolean')`
     ),
-  ],
+  ]
 );
 
 export const subscriptions = pgTable(
@@ -201,9 +189,9 @@ export const subscriptions = pgTable(
     check('subscriptions_amount_check', sql`${t.amount} > 0`),
     check(
       'subscriptions_frequency_check',
-      sql`${t.frequency} IN ('daily', 'weekly', 'monthly', 'yearly')`,
+      sql`${t.frequency} IN ('daily', 'weekly', 'monthly', 'yearly')`
     ),
-  ],
+  ]
 );
 
 export const expenses = pgTable(
@@ -251,7 +239,7 @@ export const expenses = pgTable(
     index('expenses_account_date_idx').on(t.accountId, t.date),
     index('expenses_category_idx').on(t.categoryId),
     index('expenses_subscription_idx').on(t.subscriptionId),
-  ],
+  ]
 );
 
 export const incomes = pgTable(
@@ -284,7 +272,7 @@ export const incomes = pgTable(
     index('incomes_user_date_idx').on(t.userId, t.date),
     index('incomes_account_date_idx').on(t.accountId, t.date),
     index('incomes_category_idx').on(t.categoryId),
-  ],
+  ]
 );
 
 export const cashMovements = pgTable(
@@ -321,18 +309,18 @@ export const cashMovements = pgTable(
     check('cash_movements_amount_check', sql`${t.amount} > 0`),
     check(
       'cash_movements_account_check',
-      sql`${t.initiatorAccountId} IS NOT NULL OR ${t.receiverAccountId} IS NOT NULL`,
+      sql`${t.initiatorAccountId} IS NOT NULL OR ${t.receiverAccountId} IS NOT NULL`
     ),
     check(
       'cash_movements_distinct_accounts_check',
       sql`${t.initiatorAccountId} IS NULL
         OR ${t.receiverAccountId} IS NULL
-        OR ${t.initiatorAccountId} <> ${t.receiverAccountId}`,
+        OR ${t.initiatorAccountId} <> ${t.receiverAccountId}`
     ),
     index('cash_movements_user_date_idx').on(t.userId, t.date),
     index('cash_movements_initiator_idx').on(t.initiatorAccountId, t.date),
     index('cash_movements_receiver_idx').on(t.receiverAccountId, t.date),
-  ],
+  ]
 );
 
 export const accountMonthlyBalances = pgTable(
@@ -364,10 +352,10 @@ export const accountMonthlyBalances = pgTable(
     }).onDelete('restrict'),
     check(
       'account_monthly_balances_period_check',
-      sql`EXTRACT(DAY FROM ${t.period}::date) = 1`,
+      sql`EXTRACT(DAY FROM ${t.period}::date) = 1`
     ),
     index('account_monthly_balances_user_period_idx').on(t.userId, t.period),
-  ],
+  ]
 );
 
 export const accountBalanceAdjustments = pgTable(
@@ -401,7 +389,7 @@ export const accountBalanceAdjustments = pgTable(
     }).onDelete('cascade'),
     index('account_balance_adjustments_account_date_idx').on(
       t.accountId,
-      t.date,
+      t.date
     ),
-  ],
+  ]
 );

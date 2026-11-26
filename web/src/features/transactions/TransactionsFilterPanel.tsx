@@ -13,7 +13,7 @@ import {
 /** Matches MUI `getGridFilter` (not exported from `@mui/x-data-grid/components`). */
 function createFilterItemForColumn(col: {
   field: string;
-  filterOperators?: { value: string }[];
+  filterOperators?: ReadonlyArray<{ value: string }>;
 }): GridFilterItem {
   return {
     field: col.field,

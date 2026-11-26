@@ -5,7 +5,7 @@ export type User = {
   fullName: string;
 };
 
-export type AccountKind = 'cash' | 'bank' ;
+export type AccountKind = 'cash' | 'bank';
 
 export type Account = {
   id: number;
@@ -113,7 +113,9 @@ export const TRANSACTION_KIND_LABELS: Record<TransactionKind, string> = {
 
 export type TransactionView = 'all' | 'expenses' | 'income' | 'cash';
 
-export function viewToApiKind(view: TransactionView): TransactionKind | undefined {
+export function viewToApiKind(
+  view: TransactionView
+): TransactionKind | undefined {
   if (view === 'expenses') return 'expense';
   if (view === 'income') return 'income';
   if (view === 'cash') return 'cash';

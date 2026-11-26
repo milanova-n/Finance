@@ -7,8 +7,8 @@ import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
-import { useAuth } from '../context/AuthContext';
-import { useThemeMode } from '../context/ThemeContext';
+import { useAuth } from '../context/useAuth';
+import { useThemeMode } from '../context/useThemeMode';
 import { initials } from '../utils/format';
 import { Lede, PageHeader, PageTitle } from '../styles/shared.styles';
 import { UserAvatar } from '../components/common/UserAvatar.styles';
@@ -35,8 +35,8 @@ export function Settings() {
         ? 'labels'
         : 'account';
 
-  useEffect(() => { 
-    // If the focus is set and the section is not labels, set the section to labels 
+  useEffect(() => {
+    // If the focus is set and the section is not labels, set the section to labels
     if (focus && sectionParam !== 'labels') {
       setSearchParams(
         (prev) => {
@@ -89,7 +89,8 @@ export function Settings() {
                 textTransform: 'none',
                 fontWeight: section === item.id ? 600 : 400,
                 color: section === item.id ? 'primary.main' : 'text.primary',
-                bgcolor: section === item.id ? 'action.selected' : 'transparent',
+                bgcolor:
+                  section === item.id ? 'action.selected' : 'transparent',
                 borderBottom: 1,
                 borderColor: 'divider',
               }}
@@ -172,7 +173,9 @@ export function Settings() {
                 onClick={toggle}
                 sx={{ alignSelf: 'flex-start', borderRadius: 0 }}
               >
-                {mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                {mode === 'dark'
+                  ? 'Switch to light mode'
+                  : 'Switch to dark mode'}
               </Button>
             </Stack>
           )}

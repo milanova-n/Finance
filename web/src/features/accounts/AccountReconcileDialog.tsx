@@ -1,9 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useState,
-  type FormEvent,
-} from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -38,7 +33,10 @@ function SummaryRow({
 }) {
   return (
     <Stack direction="row" sx={{ justifyContent: 'space-between', gap: 2 }}>
-      <Typography variant="body2" color={strong ? 'text.primary' : 'text.secondary'}>
+      <Typography
+        variant="body2"
+        color={strong ? 'text.primary' : 'text.secondary'}
+      >
         {label}
       </Typography>
       <Typography variant="body2" sx={{ fontWeight: strong ? 600 : 400 }}>
@@ -84,7 +82,9 @@ export function AccountReconcileDialog({
       setClosingInput(String(defaultClosing));
     } catch (err) {
       setPreview(null);
-      setError(err instanceof Error ? err.message : 'Could not load the month.');
+      setError(
+        err instanceof Error ? err.message : 'Could not load the month.'
+      );
     } finally {
       setLoading(false);
     }
@@ -206,7 +206,8 @@ export function AccountReconcileDialog({
               />
               {preview.reconciledAt ? (
                 <Typography variant="caption" color="success.main">
-                  Last reconciled {new Date(preview.reconciledAt).toLocaleString()}
+                  Last reconciled{' '}
+                  {new Date(preview.reconciledAt).toLocaleString()}
                 </Typography>
               ) : null}
               {preview.adjustments.length > 0 ? (
@@ -255,7 +256,8 @@ export function AccountReconcileDialog({
               </Typography>
               {history.slice(0, 6).map((row) => (
                 <Typography key={row.id} variant="caption">
-                  {periodLabel(row.period)} · {money(row.closingBalance, currency)}
+                  {periodLabel(row.period)} ·{' '}
+                  {money(row.closingBalance, currency)}
                   {Math.abs(row.adjustmentsTotal) >= 0.005
                     ? ` (adj ${money(row.adjustmentsTotal, currency)})`
                     : ''}
@@ -266,7 +268,11 @@ export function AccountReconcileDialog({
         </Stack>
 
         <FormActions>
-          <Button type="submit" variant="contained" disabled={busy || loading || !preview}>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={busy || loading || !preview}
+          >
             {busy ? 'Saving' : 'Save reconciliation'}
           </Button>
           <Button variant="outlined" onClick={onClose}>

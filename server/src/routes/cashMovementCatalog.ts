@@ -133,9 +133,7 @@ cashMovementTypesRouter.delete('/:id', async (req, res, next) => {
 
 cashMovementSubtypesRouter.get('/', async (req, res, next) => {
   try {
-    const typeId = req.query.typeId
-      ? Number(req.query.typeId)
-      : undefined;
+    const typeId = req.query.typeId ? Number(req.query.typeId) : undefined;
     const filters = [eq(cashMovementSubtypes.userId, req.user!.id)];
     if (typeId != null && Number.isFinite(typeId)) {
       filters.push(eq(cashMovementSubtypes.typeId, typeId));

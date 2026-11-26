@@ -3,7 +3,7 @@
 # with the same settings. Frontend deploys separately on Vercel.
 services:
   - type: web
-    name: verdant-api
+    name: myfi-api
     runtime: node
     rootDir: server
     plan: free

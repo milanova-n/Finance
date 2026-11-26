@@ -9,13 +9,13 @@ Client for **MyFi**, a personal finance app. Users sign in against the API, mana
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm install` | Install dependencies |
-| `npm run dev` | Dev server at `http://localhost:5173` (proxies `/api` to the backend) |
-| `npm run build` | Typecheck + production build to `dist/` |
-| `npm run preview` | Serve the production build locally |
-| `npm run typecheck` | TypeScript project references check only |
+| Command             | Description                                                           |
+| ------------------- | --------------------------------------------------------------------- |
+| `npm install`       | Install dependencies                                                  |
+| `npm run dev`       | Dev server at `http://localhost:5173` (proxies `/api` to the backend) |
+| `npm run build`     | Typecheck + production build to `dist/`                               |
+| `npm run preview`   | Serve the production build locally                                    |
+| `npm run typecheck` | TypeScript project references check only                              |
 
 Optional env (project root): `API_PROXY_TARGET` overrides the Vite proxy target (see `vite.config.ts`).
 
@@ -64,14 +64,14 @@ web/
 
 Route-facing screens. They wire layout, call hooks, and pass props into feature components.
 
-| File | Route | Role |
-|------|-------|------|
-| `Home.tsx` | `/` | Landing / summary |
-| `Accounts.tsx` | `/accounts` | Account cards, balances (ledger + local cashflow) |
+| File               | Route                                  | Role                                                       |
+| ------------------ | -------------------------------------- | ---------------------------------------------------------- |
+| `Home.tsx`         | `/`                                    | Landing / summary                                          |
+| `Accounts.tsx`     | `/accounts`                            | Account cards, balances (ledger + local cashflow)          |
 | `Transactions.tsx` | `/transactions`, `/transactions/:view` | Transaction tabs + grid + form (via `useTransactionsPage`) |
-| `Dashboard.tsx` | `/analysis` | Analysis placeholder / charts |
-| `Settings.tsx` | `/settings` | Categories, purposes, cash movement catalogs |
-| `Login.tsx` | (no route; shown when logged out) | Sign-in |
+| `Dashboard.tsx`    | `/analysis`                            | Analysis placeholder / charts                              |
+| `Settings.tsx`     | `/settings`                            | Categories, purposes, cash movement catalogs               |
+| `Login.tsx`        | (no route; shown when logged out)      | Sign-in                                                    |
 
 Page-specific styling may live beside the page (e.g. `Accounts.styles.ts`, `Login.styles.ts`).
 
@@ -81,13 +81,13 @@ Feature folders group UI and state for one area of the product. Not every featur
 
 **`features/transactions/`** — largest feature:
 
-| Area | Files | Responsibility |
-|------|--------|----------------|
-| Page controller | `useTransactionsPage.ts` | Loads rows, accounts, categories, form state, save/delete, custom columns |
-| Grid | `TransactionsDataGrid.tsx`, `applyTransactionGridFilters.ts`, `TransactionsFilterPanel.tsx` | MUI Data Grid, columns per tab (`all` / `expenses` / `income` / `cash`), filters |
-| Form | `TransactionFormDialog.tsx`, `draft.ts`, `types.ts`, `TransactionKindPicker.tsx`, … | Add/edit expense, income, cash |
-| Cash UX | Uses `utils/cashMovementValidation.ts` | “Not me”, balance checks for initiator/receiver |
-| Custom fields | `TransactionFormCustomColumns.tsx`, `CustomFieldValueInput.tsx` | Extra columns (expense/income, stored locally) |
+| Area            | Files                                                                                       | Responsibility                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Page controller | `useTransactionsPage.ts`                                                                    | Loads rows, accounts, categories, form state, save/delete, custom columns        |
+| Grid            | `TransactionsDataGrid.tsx`, `applyTransactionGridFilters.ts`, `TransactionsFilterPanel.tsx` | MUI Data Grid, columns per tab (`all` / `expenses` / `income` / `cash`), filters |
+| Form            | `TransactionFormDialog.tsx`, `draft.ts`, `types.ts`, `TransactionKindPicker.tsx`, …         | Add/edit expense, income, cash                                                   |
+| Cash UX         | Uses `utils/cashMovementValidation.ts`                                                      | “Not me”, balance checks for initiator/receiver                                  |
+| Custom fields   | `TransactionFormCustomColumns.tsx`, `CustomFieldValueInput.tsx`                             | Extra columns (expense/income, stored locally)                                   |
 
 **`features/settings/`** — Settings tabs for server-backed categories and browser-backed catalogs (`SettingsCatalogSection.tsx`, `CatalogNameList.tsx`).
 
@@ -123,47 +123,47 @@ Shared TypeScript types: `Account`, `Transaction`, `Entry`, `CustomFieldDefiniti
 
 Stateless logic and browser storage. No React.
 
-| Module | Purpose |
-|--------|---------|
-| `transactionLocal.ts` | Cash movements, custom field defs/values, merge with API entries into `Transaction` |
-| `accountStats.ts` | Per-account cashflow from local movements; display balance on Accounts |
-| `cashMovementCatalog.ts` | Cash movement types/subtypes (localStorage) |
-| `expensePurposeCatalog.ts` | Expense purposes (localStorage prototype) |
-| `cashMovementValidation.ts` | “Not me”, feasibility checks for cash form |
-| `catalogGaps.ts` | Detect missing setup; deep-link to Settings tabs |
-| `catalogEvents.ts` | `window` event when catalogs change |
-| `format.ts` | Money, dates, currency symbols |
-| `localStorageJson.ts` | Safe JSON read/write for catalog keys |
+| Module                      | Purpose                                                                             |
+| --------------------------- | ----------------------------------------------------------------------------------- |
+| `transactionLocal.ts`       | Cash movements, custom field defs/values, merge with API entries into `Transaction` |
+| `accountStats.ts`           | Per-account cashflow from local movements; display balance on Accounts              |
+| `cashMovementCatalog.ts`    | Cash movement types/subtypes (localStorage)                                         |
+| `expensePurposeCatalog.ts`  | Expense purposes (localStorage prototype)                                           |
+| `cashMovementValidation.ts` | “Not me”, feasibility checks for cash form                                          |
+| `catalogGaps.ts`            | Detect missing setup; deep-link to Settings tabs                                    |
+| `catalogEvents.ts`          | `window` event when catalogs change                                                 |
+| `format.ts`                 | Money, dates, currency symbols                                                      |
+| `localStorageJson.ts`       | Safe JSON read/write for catalog keys                                               |
 
 ## Routing
 
 Defined in `routes/AppRoutes.tsx`:
 
-| Path | Page |
-|------|------|
-| `/` | Home |
-| `/accounts` | Accounts |
-| `/transactions` | Transactions (default tab) |
-| `/transactions/expenses` | Expenses-only grid |
-| `/transactions/income` | Income-only grid |
-| `/transactions/cash` | Cash movements only |
-| `/analysis` | Dashboard |
-| `/settings` | Settings |
-| `*` | Redirect to `/` |
+| Path                     | Page                       |
+| ------------------------ | -------------------------- |
+| `/`                      | Home                       |
+| `/accounts`              | Accounts                   |
+| `/transactions`          | Transactions (default tab) |
+| `/transactions/expenses` | Expenses-only grid         |
+| `/transactions/income`   | Income-only grid           |
+| `/transactions/cash`     | Cash movements only        |
+| `/analysis`              | Dashboard                  |
+| `/settings`              | Settings                   |
+| `*`                      | Redirect to `/`            |
 
 The transactions hook reads `:view` from the URL and syncs the tab control (`TransactionsViewTabs`).
 
 ## Data: server vs browser
 
-| Data | Storage |
-|------|---------|
-| User, accounts, expenses, incomes, API categories | PostgreSQL via API |
-| Cash movements | `localStorage` (`myfi:cashMovements`) |
-| Expense purposes (prototype) | `localStorage` |
-| Cash movement types/subtypes | `localStorage` |
-| Custom column definitions & cell values (expense/income) | `localStorage` |
-| Grid column visibility & filters (per tab) | `localStorage` |
-| Auth token | `localStorage` (`myfi-token`) |
+| Data                                                     | Storage                               |
+| -------------------------------------------------------- | ------------------------------------- |
+| User, accounts, expenses, incomes, API categories        | PostgreSQL via API                    |
+| Cash movements                                           | `localStorage` (`myfi:cashMovements`) |
+| Expense purposes (prototype)                             | `localStorage`                        |
+| Cash movement types/subtypes                             | `localStorage`                        |
+| Custom column definitions & cell values (expense/income) | `localStorage`                        |
+| Grid column visibility & filters (per tab)               | `localStorage`                        |
+| Auth token                                               | `localStorage` (`myfi-token`)         |
 
 The Transactions screen **merges** API ledger rows and local cash rows into one `Transaction[]`, then sorts (newest date, then id) for the grid.
 

@@ -14,5 +14,7 @@ export type BalanceAdjustmentRow = {
 export async function fetchBalanceAdjustments(
   filters: Record<string, string | number | undefined> = {}
 ): Promise<BalanceAdjustmentRow[]> {
-  return api<BalanceAdjustmentRow[]>(`/balance-adjustments${queryString(filters)}`);
+  return api<BalanceAdjustmentRow[]>(
+    `/balance-adjustments${queryString(filters)}`
+  );
 }

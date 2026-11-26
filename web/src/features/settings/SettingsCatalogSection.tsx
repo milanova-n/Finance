@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -9,7 +15,10 @@ import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import { api } from '../../services/api';
-import { catalogChanged, notifyCatalogChanged } from '../../utils/catalogEvents';
+import {
+  catalogChanged,
+  notifyCatalogChanged,
+} from '../../utils/catalogEvents';
 import type { Category, ExpensePurpose } from '../../types';
 import {
   addExpensePurpose,
@@ -71,27 +80,20 @@ export function SettingsCatalogSection() {
   const [cashTypes, setCashTypes] = useState<CashMovementType[]>([]);
   const [cashSubtypes, setCashSubtypes] = useState<CashMovementSubtype[]>([]);
   const [selectedTypeId, setSelectedTypeId] = useState<string>('');
-  const [catalogRevision, setCatalogRevision] = useState(0);
   const [error, setError] = useState('');
-
-  const bumpLocalCatalog = useCallback(() => {
-    setCatalogRevision((n) => n + 1);
-  }, []);
 
   const selectedType = useMemo(
     () => cashTypes.find((t) => String(t.id) === selectedTypeId),
     [cashTypes, selectedTypeId]
   );
   const subtypes = useMemo(
-    () =>
-      selectedType ? subtypesForType(cashSubtypes, selectedType.id) : [],
-    [selectedType, cashSubtypes, catalogRevision]
+    () => (selectedType ? subtypesForType(cashSubtypes, selectedType.id) : []),
+    [selectedType, cashSubtypes]
   );
 
   const reloadPurposes = useCallback(async () => {
     setExpensePurposes(await fetchExpensePurposes());
-    bumpLocalCatalog();
-  }, [bumpLocalCatalog]);
+  }, []);
 
   const reloadServerCatalogs = useCallback(async () => {
     const [expense, income] = await Promise.all([
@@ -113,8 +115,7 @@ export function SettingsCatalogSection() {
       if (prev && types.some((t) => String(t.id) === prev)) return prev;
       return types[0] ? String(types[0].id) : '';
     });
-    bumpLocalCatalog();
-  }, [bumpLocalCatalog]);
+  }, []);
 
   const reloadAll = useCallback(async () => {
     await reloadServerCatalogs();
@@ -133,8 +134,7 @@ export function SettingsCatalogSection() {
       void reloadAll();
     };
     catalogChanged.addEventListener('change', onExternalChange);
-    return () =>
-      catalogChanged.removeEventListener('change', onExternalChange);
+    return () => catalogChanged.removeEventListener('change', onExternalChange);
   }, [reloadAll]);
 
   useEffect(() => {
@@ -160,7 +160,11 @@ export function SettingsCatalogSection() {
       </Typography>
 
       {error && (
-        <Alert severity="error" sx={{ borderRadius: 0 }} onClose={() => setError('')}>
+        <Alert
+          severity="error"
+          sx={{ borderRadius: 0 }}
+          onClose={() => setError('')}
+        >
           {error}
         </Alert>
       )}

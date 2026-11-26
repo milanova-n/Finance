@@ -61,7 +61,8 @@ function buildPredicate<R extends GridValidRowModel>(
     return null;
   }
   const api = apiRef as unknown as Parameters<typeof apply>[3];
-  return (row: R) => apply(getRowValueForFilter(row, colDef, apiRef), row, colDef, api);
+  return (row: R) =>
+    apply(getRowValueForFilter(row, colDef, apiRef), row, colDef, api);
 }
 
 export function filterTransactionGridRows<R extends GridValidRowModel>(
@@ -97,8 +98,6 @@ export function filterTransactionGridRows<R extends GridValidRowModel>(
 
   const useOr = filterModel.logicOperator === GridLogicOperator.Or;
   return rows.filter((row) =>
-    useOr
-      ? predicates.some((fn) => fn(row))
-      : predicates.every((fn) => fn(row))
+    useOr ? predicates.some((fn) => fn(row)) : predicates.every((fn) => fn(row))
   );
 }

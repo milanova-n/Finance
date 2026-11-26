@@ -60,10 +60,10 @@ export async function submitReconciliation(
   accountId: number,
   body: { period: string; closingBalance: number; comment?: string }
 ): Promise<ReconciliationPreview> {
-  return api<ReconciliationPreview>(
-    `/accounts/${accountId}/reconciliation`,
-    { method: 'POST', body }
-  );
+  return api<ReconciliationPreview>(`/accounts/${accountId}/reconciliation`, {
+    method: 'POST',
+    body,
+  });
 }
 
 export async function fetchReconciliationHistory(

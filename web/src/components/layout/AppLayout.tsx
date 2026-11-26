@@ -33,7 +33,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
 
   const closeMobile = () => setMobileOpen(false);
-  const sidebar = <AppSidebar onNavigate={isDesktop ? undefined : closeMobile} />;
+  const sidebar = (
+    <AppSidebar onNavigate={isDesktop ? undefined : closeMobile} />
+  );
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>

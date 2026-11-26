@@ -35,11 +35,7 @@ import {
 } from '../utils/accountStats';
 import { money } from '../utils/format';
 import { periodLabel } from '../utils/reconciliationApi';
-import {
-  ACCOUNT_KINDS,
-  type Account,
-  type AccountKind,
-} from '../types';
+import { ACCOUNT_KINDS, type Account, type AccountKind } from '../types';
 import { AlertSlot } from '../components/common/AlertSlot.styles';
 import { AccountReconcileDialog } from '../features/accounts/AccountReconcileDialog';
 import { FormDialog } from '../components/common/FormDialog';
@@ -116,7 +112,7 @@ function AccountStatRow({
         ) : null}
       </Box>
       <Amount component="span" strong flow={flow} sx={{ flexShrink: 0 }}>
-        {money(amount, currency)} 
+        {money(amount, currency)}
       </Amount>
     </Stack>
   );
@@ -132,7 +128,9 @@ export function Accounts() {
   const [formError, setFormError] = useState('');
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [menuAccount, setMenuAccount] = useState<Account | null>(null);
-  const [reconcileAccount, setReconcileAccount] = useState<Account | null>(null);
+  const [reconcileAccount, setReconcileAccount] = useState<Account | null>(
+    null
+  );
   const [cashRows, setCashRows] = useState<CashMovementRow[]>([]);
 
   const load = useCallback(() => {
@@ -233,7 +231,9 @@ export function Accounts() {
     <>
       <PageHeader>
         <div>
-          <PageTitle component="h1">Accounts ({money(total, currency)})</PageTitle>
+          <PageTitle component="h1">
+            Accounts ({money(total, currency)})
+          </PageTitle>
           <Lede variant="body2">
             Balances follow your ledger and cash movements. After you reconcile
             a month, the current balance stays anchored to that statement plus
@@ -279,7 +279,11 @@ export function Accounts() {
                 gap: 2,
               }}
             >
-              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'flex-start' }}>
+              <Stack
+                direction="row"
+                spacing={1.5}
+                sx={{ alignItems: 'flex-start' }}
+              >
                 <Box
                   aria-hidden
                   sx={{
@@ -300,7 +304,12 @@ export function Accounts() {
                   <Typography
                     variant="subtitle1"
                     title={account.name}
-                    sx={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    sx={{
+                      fontWeight: 600,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
                   >
                     {account.name}
                   </Typography>
@@ -317,7 +326,10 @@ export function Accounts() {
               <Stack spacing={1}>
                 <Stack
                   direction="row"
-                  sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}
+                  sx={{
+                    justifyContent: 'space-between',
+                    alignItems: 'baseline',
+                  }}
                 >
                   <Typography variant="caption" color="text.secondary">
                     Opening balance
@@ -398,7 +410,11 @@ export function Accounts() {
           })}
         >
           <AddIcon color="primary" fontSize="large" />
-          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ fontWeight: 500 }}
+          >
             Add account
           </Typography>
         </Card>

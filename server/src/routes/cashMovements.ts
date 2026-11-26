@@ -2,12 +2,7 @@ import { Router } from 'express';
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db.js';
-import {
-  accounts,
-  cashMovementSubtypes,
-  cashMovementTypes,
-  cashMovements,
-} from '../db/schema.js';
+import { accounts, cashMovementSubtypes, cashMovements } from '../db/schema.js';
 import { moneyString } from '../ledgerValues.js';
 
 export const cashMovementsRouter = Router();
@@ -43,9 +38,12 @@ async function assertSubtype(userId: number, movementSubtypeId: number) {
     )
     .limit(1);
   if (!row) {
-    throw Object.assign(new Error('That cash movement subtype does not exist.'), {
-      status: 400,
-    });
+    throw Object.assign(
+      new Error('That cash movement subtype does not exist.'),
+      {
+        status: 400,
+      }
+    );
   }
 }
 
@@ -65,16 +63,11 @@ async function assertOwnedAccount(userId: number, accountId: number) {
 
 function validateParties(initiator: number, receiver: number) {
   if (initiator === NOT_ME && receiver === NOT_ME) {
-    throw Object.assign(
-      new Error('Choose at least one account or “Not me”.'),
-      { status: 400 }
-    );
+    throw Object.assign(new Error('Choose at least one account or “Not me”.'), {
+      status: 400,
+    });
   }
-  if (
-    initiator !== NOT_ME &&
-    receiver !== NOT_ME &&
-    initiator === receiver
-  ) {
+  if (initiator !== NOT_ME && receiver !== NOT_ME && initiator === receiver) {
     throw Object.assign(
       new Error('Initiator and receiver must be different accounts.'),
       { status: 400 }

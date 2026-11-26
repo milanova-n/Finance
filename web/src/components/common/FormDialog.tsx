@@ -32,12 +32,7 @@ export function FormDialog({
   }, [open]);
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-    >
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogHead>
         {title}
         <IconButton onClick={onClose} aria-label="Close" size="small">

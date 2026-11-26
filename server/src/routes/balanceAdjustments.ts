@@ -48,7 +48,10 @@ balanceAdjustmentsRouter.get('/', async (req, res, next) => {
       )
       .innerJoin(
         accountMonthlyBalances,
-        eq(accountMonthlyBalances.id, accountBalanceAdjustments.monthlyBalanceId)
+        eq(
+          accountMonthlyBalances.id,
+          accountBalanceAdjustments.monthlyBalanceId
+        )
       )
       .where(and(...filters))
       .orderBy(

@@ -29,7 +29,6 @@ export function TransactionsPageAlerts({
           </Alert>
         </AlertSlot>
       )}
-
     </>
   );
 }

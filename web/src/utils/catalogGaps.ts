@@ -51,8 +51,7 @@ export function catalogGapForKind(
       return {
         focus: 'income-categories',
         title: 'Income categories',
-        description:
-          'Add at least one income category before logging income.',
+        description: 'Add at least one income category before logging income.',
       };
     }
     return null;
@@ -62,8 +61,7 @@ export function catalogGapForKind(
     return {
       focus: 'cash-movement-types',
       title: 'Cash movement types',
-      description:
-        'Define cash movement types and subtypes.',
+      description: 'Define cash movement types and subtypes.',
     };
   }
 

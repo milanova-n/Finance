@@ -15,6 +15,31 @@ if [ "$branch" = "main" ] || [ "$branch" = "dev" ]; then
   exit 1
 fi
 
+if [ ! -f "$ROOT/node_modules/.bin/prettier" ]; then
+  printf '\n'
+  printf 'Commit blocked: run npm install at the repo root (Prettier, ESLint, and hooks).\n'
+  printf '\n'
+  exit 1
+fi
+
+printf 'Running prettier (check)...\n'
+if ! npm run format:check --silent; then
+  printf '\n'
+  printf 'Commit blocked: Prettier found formatting issues.\n'
+  printf 'Run npm run format at the repo root, then stage the changes and commit again.\n'
+  printf '\n'
+  exit 1
+fi
+
+printf 'Running eslint...\n'
+if ! npm run lint --silent; then
+  printf '\n'
+  printf 'Commit blocked: ESLint reported problems.\n'
+  printf 'Run npm run lint:fix where possible, or fix manually, then commit again.\n'
+  printf '\n'
+  exit 1
+fi
+
 if ! command -v gitleaks >/dev/null 2>&1; then
   printf '\n'
   printf 'Commit blocked: gitleaks is not installed (required for secret scanning).\n'
@@ -44,5 +69,6 @@ if ! gitleaks protect --staged --no-banner $CONFIG_ARG; then
   exit 1
 fi
 
+printf 'prettier & eslint: ok.\n'
 printf 'gitleaks: no leaks found — commit allowed.\n'
 exit 0

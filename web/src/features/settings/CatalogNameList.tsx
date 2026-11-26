@@ -77,13 +77,15 @@ export function CatalogNameList({
       await onRename(editingId, trimmed);
       cancelEdit();
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Could not save changes.');
+      setMessage(
+        err instanceof Error ? err.message : 'Could not save changes.'
+      );
     } finally {
       setBusy(false);
     }
   }
 
-  async function remove(id: number, label: string) {
+  async function remove(id: number, _label: string) {
     setMessage('');
     try {
       await onDelete(id);
@@ -110,12 +112,22 @@ export function CatalogNameList({
       </Typography>
 
       {message && (
-        <Alert severity="error" sx={{ mb: 2, borderRadius: 0 }} onClose={() => setMessage('')}>
+        <Alert
+          severity="error"
+          sx={{ mb: 2, borderRadius: 0 }}
+          onClose={() => setMessage('')}
+        >
           {message}
         </Alert>
       )}
 
-      <Stack component="form" direction="row" spacing={1} onSubmit={submit} sx={{ mb: 2 }}>
+      <Stack
+        component="form"
+        direction="row"
+        spacing={1}
+        onSubmit={submit}
+        sx={{ mb: 2 }}
+      >
         <TextField
           label="Name"
           value={name}
@@ -124,7 +136,11 @@ export function CatalogNameList({
           fullWidth
           disabled={busy}
         />
-        <Button type="submit" variant="contained" disabled={busy || !name.trim()}>
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={busy || !name.trim()}
+        >
           {addLabel}
         </Button>
       </Stack>

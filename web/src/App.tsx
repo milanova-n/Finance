@@ -1,7 +1,7 @@
 import { AppLayout } from './components/layout/AppLayout';
 import { Login } from './pages/Login';
 import { AppRoutes } from './routes/AppRoutes';
-import { useAuth } from './context/AuthContext';
+import { useAuth } from './context/useAuth';
 
 export function App() {
   const { user, ready } = useAuth();

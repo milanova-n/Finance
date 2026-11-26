@@ -1,7 +1,5 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -10,11 +8,7 @@ import {
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import { createAppTheme, type ThemeMode } from '../styles/createAppTheme';
-
-const ThemeContext = createContext<{
-  mode: ThemeMode;
-  toggle: () => void;
-} | null>(null);
+import { ThemeModeContext } from './theme-mode-context';
 
 function initialMode(): ThemeMode {
   return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
@@ -38,17 +32,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const value = useMemo(() => ({ mode, toggle }), [mode, toggle]);
 
   return (
-    <ThemeContext.Provider value={value}>
+    <ThemeModeContext.Provider value={value}>
       <MuiThemeProvider theme={theme}>
         <CssBaseline />
         {children}
       </MuiThemeProvider>
-    </ThemeContext.Provider>
+    </ThemeModeContext.Provider>
   );
-}
-
-export function useThemeMode() {
-  const value = useContext(ThemeContext);
-  if (!value) throw new Error('useThemeMode must be used inside ThemeProvider');
-  return value;
 }

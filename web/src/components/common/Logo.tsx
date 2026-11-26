@@ -20,7 +20,6 @@ export function LogoMark({ size = 32, alt = '' }: LogoProps) {
   );
 }
 
-
 export function Wordmark() {
   return (
     <Box

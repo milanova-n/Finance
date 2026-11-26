@@ -220,10 +220,7 @@ function buildEntryRouter(cfg: EntryConfig): Router {
                 purposeId: body.purposeId ?? null,
               })
               .returning({ id: expenses.id })
-          : await db
-              .insert(incomes)
-              .values(base)
-              .returning({ id: incomes.id });
+          : await db.insert(incomes).values(base).returning({ id: incomes.id });
 
       res.status(201).json(created);
     } catch (err) {

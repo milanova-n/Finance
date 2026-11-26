@@ -18,7 +18,7 @@ function env(name: string): string {
  * the Vite proxy's fixed :4000 target miss. Only a real port number is honoured.
  */
 function port(fallback: number): number {
-  const value = Number(env('PORT')) ?? fallback;
+  const value = Number(env('PORT'));
   return Number.isInteger(value) && value > 0 && value < 65536
     ? value
     : fallback;

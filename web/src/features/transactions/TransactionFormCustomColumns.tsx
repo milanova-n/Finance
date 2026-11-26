@@ -118,11 +118,17 @@ export function TransactionFormCustomColumns({
                 fullWidth
                 error={Boolean(editDuplicate)}
                 helperText={
-                  editDuplicate ? `Already used: “${editDuplicate.label}”.` : ' '
+                  editDuplicate
+                    ? `Already used: “${editDuplicate.label}”.`
+                    : ' '
                 }
               />
               <ColumnTypeSelect value={editType} onChange={setEditType} />
-              <Stack direction="row" spacing={1} sx={{ flexShrink: 0, pt: { sm: 0.25 } }}>
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ flexShrink: 0, pt: { sm: 0.25 } }}
+              >
                 <Button
                   type="button"
                   size="small"
@@ -160,7 +166,11 @@ export function TransactionFormCustomColumns({
                 }
               />
             </Stack>
-            <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0, pb: 0.25 }}>
+            <Stack
+              direction="row"
+              spacing={0.5}
+              sx={{ flexShrink: 0, pb: 0.25 }}
+            >
               <Button type="button" size="small" onClick={() => startEdit(def)}>
                 Edit
               </Button>
@@ -192,7 +202,9 @@ export function TransactionFormCustomColumns({
             onChange={(e) => setNewLabel(e.target.value)}
             size="small"
             fullWidth
-            placeholder={draft.kind === 'expense' ? 'Country' : 'Invoice number'}
+            placeholder={
+              draft.kind === 'expense' ? 'Country' : 'Invoice number'
+            }
             error={Boolean(newDuplicate)}
             helperText={
               newDuplicate ? `Already used: “${newDuplicate.label}”.` : ' '
@@ -211,7 +223,11 @@ export function TransactionFormCustomColumns({
           </Button>
         </Stack>
         {message && (
-          <Typography variant="caption" color="error" sx={{ display: 'block', mt: 1 }}>
+          <Typography
+            variant="caption"
+            color="error"
+            sx={{ display: 'block', mt: 1 }}
+          >
             {message}
           </Typography>
         )}

@@ -37,8 +37,7 @@ import {
   NOT_ME_LABEL,
   resolveCashAccountFieldValue,
 } from '../../utils/cashMovementValidation';
-import { NEW_CATEGORY, type Draft } from './types';
-
+import type { Draft } from './types';
 
 type FormSlice = {
   open: boolean;
@@ -92,8 +91,6 @@ export function TransactionFormDialog({
     editing,
     draft,
     setDraft,
-    newCategory,
-    setNewCategory,
     busy,
     formError,
     selectedCurrency,
@@ -111,8 +108,7 @@ export function TransactionFormDialog({
       ? resolveCashAccountFieldValue(
           draft.initiatorAccountId || draft.accountId,
           accounts
-        ) ||
-        (accounts[0] ? String(accounts[0].id) : NOT_ME_ACCOUNT)
+        ) || (accounts[0] ? String(accounts[0].id) : NOT_ME_ACCOUNT)
       : draft.accountId;
 
   const receiverSelectValue =
@@ -193,7 +189,7 @@ export function TransactionFormDialog({
 
           <TextField
             select
-            label= {draft.kind === 'cash' ? 'Initiator account' : 'Account'}
+            label={draft.kind === 'cash' ? 'Initiator account' : 'Account'}
             value={initiatorSelectValue}
             onChange={(e) => {
               const next = e.target.value;
@@ -210,24 +206,22 @@ export function TransactionFormDialog({
             size="small"
             required
           >
-            {draft.kind === 'cash' ? (
-              [
-                <MenuItem key={NOT_ME_ACCOUNT} value={NOT_ME_ACCOUNT}>
-                  {NOT_ME_LABEL}
-                </MenuItem>,
-                ...accounts.map((account) => (
+            {draft.kind === 'cash'
+              ? [
+                  <MenuItem key={NOT_ME_ACCOUNT} value={NOT_ME_ACCOUNT}>
+                    {NOT_ME_LABEL}
+                  </MenuItem>,
+                  ...accounts.map((account) => (
+                    <MenuItem key={account.id} value={String(account.id)}>
+                      {account.name}
+                    </MenuItem>
+                  )),
+                ]
+              : accounts.map((account) => (
                   <MenuItem key={account.id} value={String(account.id)}>
                     {account.name}
                   </MenuItem>
-                )),
-              ]
-            ) : (
-              accounts.map((account) => (
-                <MenuItem key={account.id} value={String(account.id)}>
-                  {account.name}
-                </MenuItem>
-              ))
-            )}
+                ))}
           </TextField>
 
           {draft.kind !== 'cash' && (
@@ -318,9 +312,7 @@ export function TransactionFormDialog({
                 disabled={!draft.movementTypeId}
               >
                 {cashSubtypes
-                  .filter(
-                    (s) => String(s.typeId) === draft.movementTypeId
-                  )
+                  .filter((s) => String(s.typeId) === draft.movementTypeId)
                   .map((sub) => (
                     <MenuItem key={sub.id} value={String(sub.id)}>
                       {sub.name}

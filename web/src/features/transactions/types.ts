@@ -32,4 +32,3 @@ export function defaultKindForView(view: TransactionView): TransactionKind {
   if (view === 'cash') return 'cash';
   return 'expense';
 }
-

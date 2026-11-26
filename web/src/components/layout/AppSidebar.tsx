@@ -12,7 +12,7 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import { NavLink } from 'react-router-dom';
 import { Wordmark } from '../common/Logo';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import {
   SideNavButton,
   SideNavLink,
@@ -33,7 +33,11 @@ type MainLink = {
 
 const MAIN_LINKS: MainLink[] = [
   { to: '/', label: 'Home', icon: HomeOutlinedIcon, end: true },
-  { to: '/accounts', label: 'Accounts', icon: AccountBalanceWalletOutlinedIcon },
+  {
+    to: '/accounts',
+    label: 'Accounts',
+    icon: AccountBalanceWalletOutlinedIcon,
+  },
   {
     to: '/transactions',
     label: 'Transactions',

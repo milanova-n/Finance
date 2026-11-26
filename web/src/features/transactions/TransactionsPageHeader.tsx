@@ -16,7 +16,8 @@ export function TransactionsPageHeader({
       <Box>
         <PageTitle component="h1">Transactions</PageTitle>
         <Lede variant="body2">
-          Track your income, expenses, and cash movements and stay on top of your finances.
+          Track your income, expenses, and cash movements and stay on top of
+          your finances.
         </Lede>
       </Box>
       <Button

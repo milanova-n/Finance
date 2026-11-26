@@ -51,10 +51,7 @@ import {
   type CashMovementType,
 } from '../../utils/cashMovementCatalog';
 import { fetchExpensePurposes } from '../../utils/expensePurposeCatalog';
-import {
-  catalogGapForKind,
-  type CatalogGap,
-} from '../../utils/catalogGaps';
+import { catalogGapForKind, type CatalogGap } from '../../utils/catalogGaps';
 import {
   accountCashMovementStats,
   accountDisplayBalance,
@@ -66,7 +63,10 @@ import {
   resolveCashAccountFieldValue,
   toCashAccountSelectValue,
 } from '../../utils/cashMovementValidation';
-import { catalogChanged, notifyCatalogChanged } from '../../utils/catalogEvents';
+import {
+  catalogChanged,
+  notifyCatalogChanged,
+} from '../../utils/catalogEvents';
 import { blankCashDraft, blankLedgerDraft } from './draft';
 import { defaultKindForView, NEW_CATEGORY, type Draft } from './types';
 
@@ -212,14 +212,7 @@ export function useTransactionsPage() {
       fetchCashMovementSubtypes(),
     ])
       .then(
-        ([
-          accountRows,
-          expenseCats,
-          incomeCats,
-          purposes,
-          types,
-          subtypes,
-        ]) => {
+        ([accountRows, expenseCats, incomeCats, purposes, types, subtypes]) => {
           setAccounts(accountRows);
           setExpenseCategories(expenseCats);
           setIncomeCategories(incomeCats);
@@ -268,7 +261,7 @@ export function useTransactionsPage() {
     const typeId = Number(draft.movementTypeId);
     if (!Number.isFinite(typeId) || draft.movementTypeId === '') return [];
     return subtypesForType(allCashSubtypes, typeId);
-  }, [draft, allCashSubtypes, catalogStamp]);
+  }, [draft, allCashSubtypes]);
 
   useEffect(() => {
     if (!open) return;
@@ -383,7 +376,7 @@ export function useTransactionsPage() {
         receiverAccountId: receiver,
       };
     });
-  }, [open, accountIdsKey, accounts.length]);
+  }, [open, accountIdsKey, accounts]);
 
   const selectedCurrency = useMemo(() => {
     if (draft.kind === 'cash') {
@@ -392,9 +385,7 @@ export function useTransactionsPage() {
       );
       const receiverId = fromCashAccountSelectValue(draft.receiverAccountId);
       const lookupId = initiatorId > 0 ? initiatorId : receiverId;
-      return (
-        accounts.find((a) => a.id === lookupId)?.currency ?? currency
-      );
+      return accounts.find((a) => a.id === lookupId)?.currency ?? currency;
     }
     return (
       accounts.find((a) => String(a.id) === draft.accountId)?.currency ??
@@ -415,11 +406,9 @@ export function useTransactionsPage() {
       balanceForAccount: (accountId) => {
         const account = accounts.find((a) => a.id === accountId);
         if (!account) return 0;
-        const cash = accountCashMovementStats(
-          accountId,
-          cashMovementRows,
-          { excludeCashMovementId: excludeId }
-        );
+        const cash = accountCashMovementStats(accountId, cashMovementRows, {
+          excludeCashMovementId: excludeId,
+        });
         return accountDisplayBalance(account, cash);
       },
     });
@@ -505,8 +494,7 @@ export function useTransactionsPage() {
           };
         }
 
-        const cats =
-          next === 'expense' ? expenseCategories : incomeCategories;
+        const cats = next === 'expense' ? expenseCategories : incomeCategories;
         return {
           ...blankLedgerDraft(next),
           ...shared,
@@ -529,61 +517,64 @@ export function useTransactionsPage() {
     ]
   );
 
-  const openEdit = useCallback((row: Transaction) => {
-    if (row.kind === 'adjustment') {
-      setError(
-        'Reconciliation adjustments are managed from Accounts → Reconcile month.'
-      );
-      return;
-    }
-    setEditing(row);
-    setNewCategory('');
-    setFormError('');
-    if (row.kind === 'cash') {
-      const subtypeFromId = row.movementSubtypeId
-        ? allCashSubtypes.find((s) => s.id === row.movementSubtypeId)
-        : undefined;
-      const matchedType = subtypeFromId
-        ? cashTypes.find((t) => t.id === subtypeFromId.typeId)
-        : findTypeByName(cashTypes, row.movementType ?? '');
-      const matchedSubtype =
-        subtypeFromId ??
-        (matchedType && row.movementSubtype
-          ? findSubtypeByName(
-              allCashSubtypes,
-              matchedType.id,
-              row.movementSubtype
-            )
-          : undefined);
-      setDraft({
-        kind: 'cash',
-        date: row.date,
-        amount: String(row.amount),
-        accountId: toCashAccountSelectValue(
-          row.initiatorAccountId ?? row.accountId
-        ),
-        comment: row.comment,
-        movementTypeId: matchedType ? String(matchedType.id) : '',
-        movementSubtypeId: matchedSubtype ? String(matchedSubtype.id) : '',
-        initiatorAccountId: toCashAccountSelectValue(
-          row.initiatorAccountId ?? row.accountId
-        ),
-        receiverAccountId: toCashAccountSelectValue(row.receiverAccountId),
-      });
-    } else {
-      setDraft({
-        kind: row.kind,
-        date: row.date,
-        amount: String(row.amount),
-        accountId: String(row.accountId),
-        categoryId: String(row.categoryId ?? ''),
-        purposeId: String(row.purposeId ?? ''),
-        comment: row.comment,
-        customFields: { ...(row.customFields ?? {}) },
-      });
-    }
-    setOpen(true);
-  }, [cashTypes, allCashSubtypes]);
+  const openEdit = useCallback(
+    (row: Transaction) => {
+      if (row.kind === 'adjustment') {
+        setError(
+          'Reconciliation adjustments are managed from Accounts → Reconcile month.'
+        );
+        return;
+      }
+      setEditing(row);
+      setNewCategory('');
+      setFormError('');
+      if (row.kind === 'cash') {
+        const subtypeFromId = row.movementSubtypeId
+          ? allCashSubtypes.find((s) => s.id === row.movementSubtypeId)
+          : undefined;
+        const matchedType = subtypeFromId
+          ? cashTypes.find((t) => t.id === subtypeFromId.typeId)
+          : findTypeByName(cashTypes, row.movementType ?? '');
+        const matchedSubtype =
+          subtypeFromId ??
+          (matchedType && row.movementSubtype
+            ? findSubtypeByName(
+                allCashSubtypes,
+                matchedType.id,
+                row.movementSubtype
+              )
+            : undefined);
+        setDraft({
+          kind: 'cash',
+          date: row.date,
+          amount: String(row.amount),
+          accountId: toCashAccountSelectValue(
+            row.initiatorAccountId ?? row.accountId
+          ),
+          comment: row.comment,
+          movementTypeId: matchedType ? String(matchedType.id) : '',
+          movementSubtypeId: matchedSubtype ? String(matchedSubtype.id) : '',
+          initiatorAccountId: toCashAccountSelectValue(
+            row.initiatorAccountId ?? row.accountId
+          ),
+          receiverAccountId: toCashAccountSelectValue(row.receiverAccountId),
+        });
+      } else {
+        setDraft({
+          kind: row.kind,
+          date: row.date,
+          amount: String(row.amount),
+          accountId: String(row.accountId),
+          categoryId: String(row.categoryId ?? ''),
+          purposeId: String(row.purposeId ?? ''),
+          comment: row.comment,
+          customFields: { ...(row.customFields ?? {}) },
+        });
+      }
+      setOpen(true);
+    },
+    [cashTypes, allCashSubtypes]
+  );
 
   const save = useCallback(
     async (event: FormEvent) => {
@@ -761,11 +752,14 @@ export function useTransactionsPage() {
     [loadRows]
   );
 
-  const syncFieldDefsFor = useCallback(async (appliesTo: 'expense' | 'income') => {
-    const defs = await fetchCustomFieldDefinitions(appliesTo);
-    if (appliesTo === 'expense') setExpenseFieldDefs(defs);
-    else setIncomeFieldDefs(defs);
-  }, []);
+  const syncFieldDefsFor = useCallback(
+    async (appliesTo: 'expense' | 'income') => {
+      const defs = await fetchCustomFieldDefinitions(appliesTo);
+      if (appliesTo === 'expense') setExpenseFieldDefs(defs);
+      else setIncomeFieldDefs(defs);
+    },
+    []
+  );
 
   const applyCustomFieldDefinition = useCallback(
     async (
@@ -781,17 +775,19 @@ export function useTransactionsPage() {
 
   const newColumnDuplicate = useMemo(() => {
     if (draft.kind === 'cash' || !newColumnLabel.trim()) return undefined;
-    const defs =
-      draft.kind === 'expense' ? expenseFieldDefs : incomeFieldDefs;
+    const defs = draft.kind === 'expense' ? expenseFieldDefs : incomeFieldDefs;
     return findCustomFieldDuplicate(defs, draft.kind, newColumnLabel);
   }, [draft.kind, newColumnLabel, expenseFieldDefs, incomeFieldDefs]);
 
   const editColumnDuplicate = useMemo(() => {
-    if (draft.kind === 'cash' || editingColumnId == null || !editColumnLabel.trim()) {
+    if (
+      draft.kind === 'cash' ||
+      editingColumnId == null ||
+      !editColumnLabel.trim()
+    ) {
       return undefined;
     }
-    const defs =
-      draft.kind === 'expense' ? expenseFieldDefs : incomeFieldDefs;
+    const defs = draft.kind === 'expense' ? expenseFieldDefs : incomeFieldDefs;
     return findCustomFieldDuplicate(
       defs,
       draft.kind,
@@ -912,7 +908,9 @@ export function useTransactionsPage() {
       syncFieldDefsFor(def.appliesTo);
       setDraft((d) => {
         if (d.kind === 'cash' || d.kind !== def.appliesTo) return d;
-        if (!Object.prototype.hasOwnProperty.call(d.customFields, def.fieldKey)) {
+        if (
+          !Object.prototype.hasOwnProperty.call(d.customFields, def.fieldKey)
+        ) {
           return d;
         }
         const { [def.fieldKey]: _removed, ...rest } = d.customFields;
@@ -951,9 +949,7 @@ export function useTransactionsPage() {
 
   const changeView = useCallback(
     (next: TransactionView) => {
-      navigate(
-        next === 'all' ? '/transactions' : `/transactions/${next}`
-      );
+      navigate(next === 'all' ? '/transactions' : `/transactions/${next}`);
     },
     [navigate]
   );

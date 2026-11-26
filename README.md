@@ -1,4 +1,4 @@
-# Verdant
+# MyFi
 
 A personal finance tracker: accounts, expenses and income, with balances derived
 from the ledger rather than stored.
@@ -30,17 +30,21 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173 and create an account, or sign in to the seeded one:
+## Code style (Prettier & ESLint)
 
-| Username | Password     |
-| -------- | ------------ |
-| `filip`  | `verdant123` |
+Formatting and linting run at the **repo root** (`package.json`).
 
-### pgAdmin
+```bash
+npm install          # once — also wires git hooks via prepare
+npm run format       # apply Prettier
+npm run format:check # CI / hook check
+npm run lint
+npm run lint:fix
+```
 
-http://localhost:5050 — sign in with `admin@verdant.local` / `admin`. The
-**Verdant (local)** server is pre-registered; when it asks for the database
-password, use `verdant`.
+Prettier uses `.prettierrc`. ESLint uses flat config in `eslint.config.js` for
+`server/` and `web/`. The pre-commit hook and GitHub Actions **CI** job
+`Format & lint` run `format:check` and `lint`.
 
 ## Secret scanning (gitleaks)
 

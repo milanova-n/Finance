@@ -19,7 +19,10 @@ categoriesRouter.get('/', async (req, res, next) => {
             })
             .from(categories)
             .where(
-              and(eq(categories.userId, req.user!.id), eq(categories.kind, kind))
+              and(
+                eq(categories.userId, req.user!.id),
+                eq(categories.kind, kind)
+              )
             )
             .orderBy(asc(categories.name))
         : await db
@@ -174,10 +177,7 @@ categoriesRouter.delete('/:id', async (req, res, next) => {
     const [deleted] = await db
       .delete(categories)
       .where(
-        and(
-          eq(categories.id, categoryId),
-          eq(categories.userId, req.user!.id)
-        )
+        and(eq(categories.id, categoryId), eq(categories.userId, req.user!.id))
       )
       .returning({ id: categories.id });
 

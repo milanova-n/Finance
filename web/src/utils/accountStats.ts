@@ -18,17 +18,11 @@ export function accountCashMovementStats(
 
   for (const row of rows) {
     if (options?.excludeCashMovementId === row.id) continue;
-    if (
-      row.initiatorAccountId === accountId &&
-      row.initiatorAccountId > 0
-    ) {
+    if (row.initiatorAccountId === accountId && row.initiatorAccountId > 0) {
       net -= row.amount;
       dates.push(row.date);
     }
-    if (
-      row.receiverAccountId === accountId &&
-      row.receiverAccountId > 0
-    ) {
+    if (row.receiverAccountId === accountId && row.receiverAccountId > 0) {
       net += row.amount;
       dates.push(row.date);
     }
@@ -58,7 +52,10 @@ export function accountDisplayBalance(
   account: Pick<Account, 'balance' | 'reconciledBalance'>,
   cash: AccountCashStats
 ): number {
-  if (account.reconciledBalance != null && Number.isFinite(account.reconciledBalance)) {
+  if (
+    account.reconciledBalance != null &&
+    Number.isFinite(account.reconciledBalance)
+  ) {
     return account.reconciledBalance;
   }
   return account.balance + cash.net;

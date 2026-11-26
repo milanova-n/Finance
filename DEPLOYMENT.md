@@ -1,12 +1,12 @@
 # Deployment
 
-Verdant deploys as a split stack:
+MyFi deploys as a split stack:
 
-| Component | Host | Trigger |
-|-----------|------|---------|
-| Frontend (`web/`) | [Vercel](https://vercel.com) | GitHub Actions on push to `main` |
-| Backend (`server/`) | [Render](https://render.com) | GitHub Actions deploy hook |
-| Database | [Supabase](https://supabase.com) Postgres | Manual setup |
+| Component           | Host                                      | Trigger                          |
+| ------------------- | ----------------------------------------- | -------------------------------- |
+| Frontend (`web/`)   | [Vercel](https://vercel.com)              | GitHub Actions on push to `main` |
+| Backend (`server/`) | [Render](https://render.com)              | GitHub Actions deploy hook       |
+| Database            | [Supabase](https://supabase.com) Postgres | Manual setup                     |
 
 ## 1. Supabase database
 
@@ -20,12 +20,12 @@ Verdant deploys as a split stack:
 2. Set **Root directory** to `server`.
 3. Environment variables:
 
-   | Variable | Example |
-   |----------|---------|
-   | `DATABASE_URL` | `postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres` |
-   | `JWT_SECRET` | long random string |
-   | `CLIENT_ORIGIN` | `https://your-app.vercel.app` |
-   | `PORT` | `10000` (Render default) |
+   | Variable        | Example                                                                                   |
+   | --------------- | ----------------------------------------------------------------------------------------- |
+   | `DATABASE_URL`  | `postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres` |
+   | `JWT_SECRET`    | long random string                                                                        |
+   | `CLIENT_ORIGIN` | `https://your-app.vercel.app`                                                             |
+   | `PORT`          | `10000` (Render default)                                                                  |
 
 4. Build command: `npm install && npm run build && npm run db:migrate`
 5. Start command: `npm start`
@@ -42,8 +42,8 @@ If your database already has tables from the old migrator, `npm run db:migrate` 
 2. Framework preset: **Vite**.
 3. Environment variable:
 
-   | Variable | Value |
-   |----------|-------|
+   | Variable       | Value                                                            |
+   | -------------- | ---------------------------------------------------------------- |
    | `VITE_API_URL` | Your Render service URL, e.g. `https://verdant-api.onrender.com` |
 
 4. Note the **Project ID** and **Org ID** from Vercel project settings.
@@ -52,14 +52,14 @@ If your database already has tables from the old migrator, `npm run db:migrate` 
 
 Add these under **Settings → Secrets and variables → Actions**:
 
-| Secret | Used by |
-|--------|---------|
-| `RENDER_DEPLOY_HOOK_URL` | Backend deploy workflow |
-| `RENDER_API_URL` | Backend health check, e.g. `https://verdant-api.onrender.com` |
-| `VERCEL_TOKEN` | Frontend deploy ([create token](https://vercel.com/account/tokens)) |
-| `VERCEL_ORG_ID` | Frontend deploy |
-| `VERCEL_PROJECT_ID` | Frontend deploy |
-| `VITE_API_URL` | Frontend build (same as Vercel env) |
+| Secret                   | Used by                                                             |
+| ------------------------ | ------------------------------------------------------------------- |
+| `RENDER_DEPLOY_HOOK_URL` | Backend deploy workflow                                             |
+| `RENDER_API_URL`         | Backend health check, e.g. `https://verdant-api.onrender.com`       |
+| `VERCEL_TOKEN`           | Frontend deploy ([create token](https://vercel.com/account/tokens)) |
+| `VERCEL_ORG_ID`          | Frontend deploy                                                     |
+| `VERCEL_PROJECT_ID`      | Frontend deploy                                                     |
+| `VITE_API_URL`           | Frontend build (same as Vercel env)                                 |
 
 Create a GitHub **environment** named `production` (optional but recommended) and attach the secrets there.
 
@@ -71,10 +71,10 @@ Create a GitHub **environment** named `production` (optional but recommended) an
 
 ### Reading failed deployment logs
 
-| Platform | Where to look |
-|----------|---------------|
-| GitHub Actions | Repo → Actions → failed workflow → expand failed step |
-| Render | Dashboard → service → **Logs** (build + runtime tabs) |
-| Vercel | Dashboard → project → **Deployments** → failed deployment → Build Logs |
+| Platform       | Where to look                                                          |
+| -------------- | ---------------------------------------------------------------------- |
+| GitHub Actions | Repo → Actions → failed workflow → expand failed step                  |
+| Render         | Dashboard → service → **Logs** (build + runtime tabs)                  |
+| Vercel         | Dashboard → project → **Deployments** → failed deployment → Build Logs |
 
 Failed workflows also append a short checklist to the **Summary** tab on the run page.

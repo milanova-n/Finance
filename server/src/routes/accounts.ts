@@ -14,49 +14,6 @@ export const accountsRouter = Router();
 
 accountsRouter.use('/:accountId/reconciliation', reconciliationRouter);
 
-/**
- * An account's current balance is never stored — it is derived, so it can
- * never drift out of sync with the transactions that produced it.
- */
-const BALANCE_SQL = `
-  SELECT
-    a.id,
-    a.name,
-    a.kind,
-    a.currency,
-    a.opening_balance                                            AS "openingBalance",
-    COALESCE(i.total, 0)                                         AS "incomeTotal",
-    COALESCE(e.total, 0)                                         AS "expenseTotal",
-    a.opening_balance + COALESCE(i.total, 0) - COALESCE(e.total, 0) AS balance,
-    i."firstDate"                                                AS "incomeFirstDate",
-    i."lastDate"                                                 AS "incomeLastDate",
-    e."firstDate"                                                AS "expenseFirstDate",
-    e."lastDate"                                                 AS "expenseLastDate"
-  FROM accounts a
-  LEFT JOIN (
-    SELECT
-      account_id,
-      SUM(amount) AS total,
-      to_char(MIN(date), 'YYYY-MM-DD') AS "firstDate",
-      to_char(MAX(date), 'YYYY-MM-DD') AS "lastDate"
-    FROM incomes
-    WHERE user_id = $1
-    GROUP BY account_id
-  ) i ON i.account_id = a.id
-  LEFT JOIN (
-    SELECT
-      account_id,
-      SUM(amount) AS total,
-      to_char(MIN(date), 'YYYY-MM-DD') AS "firstDate",
-      to_char(MAX(date), 'YYYY-MM-DD') AS "lastDate"
-    FROM expenses
-    WHERE user_id = $1
-    GROUP BY account_id
-  ) e ON e.account_id = a.id
-  WHERE a.user_id = $1
-  ORDER BY a.created_at
-`;
-
 async function listAccountsWithBalances(userId: number) {
   const result = await db.execute<{
     id: number;
@@ -109,7 +66,6 @@ async function listAccountsWithBalances(userId: number) {
 
   return enriched;
 }
-
 
 const accountSchema = z.object({
   name: z.string().trim().min(1, 'Give the account a name.').max(80),

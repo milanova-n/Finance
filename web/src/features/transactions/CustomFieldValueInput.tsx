@@ -35,7 +35,6 @@ export function CustomFieldValueInput({ def, value, onChange }: Props) {
         onChange={(e) => onChange(e.target.value)}
         size="small"
         slotProps={{ inputLabel: { shrink: true } }}
-
       />
     );
   }
@@ -49,9 +48,7 @@ export function CustomFieldValueInput({ def, value, onChange }: Props) {
       size="small"
       fullWidth
       slotProps={
-        def.fieldType === 'number'
-          ? { htmlInput: { step: 'any' } }
-          : undefined
+        def.fieldType === 'number' ? { htmlInput: { step: 'any' } } : undefined
       }
     />
   );

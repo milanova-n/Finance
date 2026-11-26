@@ -13,7 +13,8 @@ export function AppRoutes() {
       <Route path="/accounts" element={<Accounts />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="/transactions" element={<Transactions />} />
-      <Route path="/transactions/:view" element={<Transactions />} /> // Used for transactions/expenses and transactions/income
+      <Route path="/transactions/:view" element={<Transactions />} /> // Used
+      for transactions/expenses and transactions/income
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

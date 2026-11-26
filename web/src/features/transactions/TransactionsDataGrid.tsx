@@ -317,11 +317,7 @@ export function TransactionsDataGrid({
             <CategoryChip
               label={String(params.value)}
               size="small"
-              flow={
-                tx.kind === 'income'
-                  ? 'earn'
-                  : undefined
-              }
+              flow={tx.kind === 'income' ? 'earn' : undefined}
             />
           );
         },
@@ -392,9 +388,7 @@ export function TransactionsDataGrid({
           colDef.type = 'date';
           colDef.valueGetter = (_value, row) => {
             const raw = row[field as keyof TransactionGridRow];
-            return typeof raw === 'string'
-              ? parseIsoDateLocal(raw)
-              : null;
+            return typeof raw === 'string' ? parseIsoDateLocal(raw) : null;
           };
         }
         cols.push(colDef);
@@ -418,7 +412,11 @@ export function TransactionsDataGrid({
           <Typography
             variant="body2"
             color="text.secondary"
-            sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
             title={String(params.value ?? '')}
           >
             {(params.value as string) || '—'}
@@ -432,8 +430,7 @@ export function TransactionsDataGrid({
         align: 'right',
         headerAlign: 'right',
         type: 'number',
-        valueFormatter: (_value, row) =>
-          money(row.amount, row.currency),
+        valueFormatter: (_value, row) => money(row.amount, row.currency),
         renderCell: (params: GridRenderCellParams<TransactionGridRow>) => {
           const tx = params.row.transaction;
           const flow =
@@ -467,10 +464,19 @@ export function TransactionsDataGrid({
           const tx = params.row.transaction;
           return (
             <RowActions>
-              <Button size="small" onClick={() => onEdit(tx)} disabled={tx.kind === 'adjustment'}>
+              <Button
+                size="small"
+                onClick={() => onEdit(tx)}
+                disabled={tx.kind === 'adjustment'}
+              >
                 Edit
               </Button>
-              <Button size="small" color="error" onClick={() => onDelete(tx)} disabled={tx.kind === 'adjustment'}>
+              <Button
+                size="small"
+                color="error"
+                onClick={() => onDelete(tx)}
+                disabled={tx.kind === 'adjustment'}
+              >
                 Delete
               </Button>
             </RowActions>
@@ -529,13 +535,7 @@ export function TransactionsDataGrid({
   );
 
   const displayedRows = useMemo(
-    () =>
-      filterTransactionGridRows(
-        gridRows,
-        columns,
-        filterModel,
-        apiRef
-      ),
+    () => filterTransactionGridRows(gridRows, columns, filterModel, apiRef),
     [gridRows, columns, filterModel, apiRef]
   );
 

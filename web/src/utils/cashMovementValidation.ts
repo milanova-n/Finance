@@ -52,9 +52,7 @@ export function assessCashMovement(input: {
 }): CashMovementCheck {
   const amount = Number(input.amountStr);
 
-  const initiatorId = fromCashAccountSelectValue(
-    input.initiatorAccountId
-  );
+  const initiatorId = fromCashAccountSelectValue(input.initiatorAccountId);
   const receiverId = fromCashAccountSelectValue(input.receiverAccountId);
 
   if (initiatorId === NOT_ME_ACCOUNT_ID && receiverId === NOT_ME_ACCOUNT_ID) {
@@ -74,11 +72,7 @@ export function assessCashMovement(input: {
       ? input.accounts.find((a) => a.id === receiverId)
       : undefined;
 
-  if (
-    initiatorId > 0 &&
-    receiverId > 0 &&
-    initiatorId === receiverId
-  ) {
+  if (initiatorId > 0 && receiverId > 0 && initiatorId === receiverId) {
     return {
       feasible: false,
       message: 'Initiator and receiver must be different accounts.',

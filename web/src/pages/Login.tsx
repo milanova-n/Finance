@@ -9,7 +9,7 @@ import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { LogoMark } from '../components/common/Logo';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { Lede, PageTitle } from '../styles/shared.styles';
 import {
   validateEmail,
@@ -101,8 +101,8 @@ export function Login() {
         <div className="m-auto">
           <AuthPitch component="h1">Every euro, accounted for.</AuthPitch>
           <AuthNote>
-            Log what you spend and what comes in, and MyFi works out where
-            each account actually stands.
+            Log what you spend and what comes in, and MyFi works out where each
+            account actually stands.
           </AuthNote>
         </div>
       </AuthAside>

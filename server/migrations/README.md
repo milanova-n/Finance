@@ -40,9 +40,9 @@ Use short, verb-led names: `initial_schema`, `add_user_email_index`,
 
 ## What’s in `drizzle/meta/`
 
-| File | Purpose |
-|------|---------|
-| `_journal.json` | Order and tags of migration files — do not delete |
+| File                           | Purpose                                                       |
+| ------------------------------ | ------------------------------------------------------------- |
+| `_journal.json`                | Order and tags of migration files — do not delete             |
 | `0000_snapshot.json`, `0001_…` | Schema snapshot after each migration — used for the next diff |
 
 These files belong in git with the matching `.sql` files.

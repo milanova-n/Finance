@@ -45,11 +45,7 @@ app.use('/api/incomes', requireAuth, incomesRouter);
 app.use('/api/cash-movements', requireAuth, cashMovementsRouter);
 app.use('/api/expense-purposes', requireAuth, expensePurposesRouter);
 app.use('/api/cash-movement-types', requireAuth, cashMovementTypesRouter);
-app.use(
-  '/api/cash-movement-subtypes',
-  requireAuth,
-  cashMovementSubtypesRouter
-);
+app.use('/api/cash-movement-subtypes', requireAuth, cashMovementSubtypesRouter);
 app.use(
   '/api/custom-field-definitions',
   requireAuth,
