@@ -1,0 +1,48 @@
+#!/bin/sh
+# Block commits on protected branches and when gitleaks finds secrets in staged changes.
+
+set -e
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+branch="$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
+if [ "$branch" = "main" ] || [ "$branch" = "dev" ]; then
+  printf '\n'
+  printf 'Commit blocked: direct commits to "%s" are not allowed.\n' "$branch"
+  printf 'Create a feature branch, commit there, and merge via pull request.\n'
+  printf '\n'
+  exit 1
+fi
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  printf '\n'
+  printf 'Commit blocked: gitleaks is not installed (required for secret scanning).\n'
+  printf '\n'
+  printf 'Install:\n'
+  printf '  Windows: winget install Gitleaks.Gitleaks\n'
+  printf '  macOS:   brew install gitleaks\n'
+  printf '  Linux:   https://github.com/gitleaks/gitleaks#installing\n'
+  printf '\n'
+  exit 1
+fi
+
+printf 'Running gitleaks on staged changes...\n'
+
+CONFIG_ARG=""
+if [ -f "$ROOT/.gitleaks.toml" ]; then
+  CONFIG_ARG="--config $ROOT/.gitleaks.toml"
+fi
+
+# shellcheck disable=SC2086
+if ! gitleaks protect --staged --no-banner $CONFIG_ARG; then
+  printf '\n'
+  printf 'Commit blocked: gitleaks reported possible secrets in staged changes.\n'
+  printf 'Remove or rotate the credentials, stage the fix, then commit again.\n'
+  printf 'For intentional false positives, add an allowlist entry in .gitleaks.toml\n'
+  printf '\n'
+  exit 1
+fi
+
+printf 'gitleaks: no leaks found — commit allowed.\n'
+exit 0

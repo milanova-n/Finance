@@ -44,15 +44,17 @@ password, use `verdant`.
 
 ## Secret scanning (gitleaks)
 
-Every `git push` runs [gitleaks](https://github.com/gitleaks/gitleaks) over the
-full repository. The push is rejected if possible secrets are found.
+Every `git commit` runs [gitleaks](https://github.com/gitleaks/gitleaks) on
+staged changes. The commit is rejected if possible secrets are found. Direct
+commits on `main` and `dev` are also blocked — use a feature branch and open a
+pull request.
 
 1. Install gitleaks once (`winget install Gitleaks.Gitleaks` on Windows, or
    `brew install gitleaks` on macOS).
 2. From the repo root, run `npm install` once so git uses the shared hook in
    `.githooks/` (`prepare` sets `core.hooksPath`).
 
-To scan manually without pushing: `npm run gitleaks`. Allowlisted false
+To scan manually without committing: `npm run gitleaks`. Allowlisted false
 positives go in `.gitleaks.toml`.
 
 ## Deployment
