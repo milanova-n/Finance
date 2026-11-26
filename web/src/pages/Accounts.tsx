@@ -20,8 +20,6 @@ import AddIcon from '@mui/icons-material/Add';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import AccountBalanceOutlinedIcon from '@mui/icons-material/AccountBalanceOutlined';
 import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
-import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
-import SavingsOutlinedIcon from '@mui/icons-material/SavingsOutlined';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { api } from '../services/api';
 import {
