@@ -48,7 +48,6 @@ export const AuthAside = styled(Box)<Poly>(({ theme }) => ({
   [theme.breakpoints.down('md')]: {
     padding: theme.spacing(4, 3),
     gap: theme.spacing(3),
-    '& .auth-footnote': { display: 'none' },
   },
 }));
 
@@ -67,10 +66,6 @@ export const AuthNote = styled(Typography)(({ theme }) => ({
   marginTop: theme.spacing(2),
 }));
 
-export const AuthFootnote = styled(Typography)({
-  opacity: 0.72,
-  fontSize: '0.86rem',
-});
 
 export const AuthPanel = styled(Box)<Poly>(({ theme }) => ({
   display: 'grid',

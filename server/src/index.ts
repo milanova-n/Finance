@@ -13,6 +13,14 @@ import { accountsRouter } from './routes/accounts.js';
 import { catalogRouter } from './routes/catalog.js';
 import { categoriesRouter } from './routes/categories.js';
 import { expensesRouter, incomesRouter } from './routes/entries.js';
+import { cashMovementsRouter } from './routes/cashMovements.js';
+import { expensePurposesRouter } from './routes/expensePurposes.js';
+import {
+  cashMovementSubtypesRouter,
+  cashMovementTypesRouter,
+} from './routes/cashMovementCatalog.js';
+import { customFieldDefinitionsRouter } from './routes/customFieldDefinitions.js';
+import { balanceAdjustmentsRouter } from './routes/balanceAdjustments.js';
 
 const app = express();
 
@@ -34,6 +42,20 @@ app.use('/api/categories', requireAuth, categoriesRouter);
 app.use('/api/catalog', requireAuth, catalogRouter);
 app.use('/api/expenses', requireAuth, expensesRouter);
 app.use('/api/incomes', requireAuth, incomesRouter);
+app.use('/api/cash-movements', requireAuth, cashMovementsRouter);
+app.use('/api/expense-purposes', requireAuth, expensePurposesRouter);
+app.use('/api/cash-movement-types', requireAuth, cashMovementTypesRouter);
+app.use(
+  '/api/cash-movement-subtypes',
+  requireAuth,
+  cashMovementSubtypesRouter
+);
+app.use(
+  '/api/custom-field-definitions',
+  requireAuth,
+  customFieldDefinitionsRouter
+);
+app.use('/api/balance-adjustments', requireAuth, balanceAdjustmentsRouter);
 
 app.use((_req, res) => res.status(404).json({ error: 'No such endpoint.' }));
 

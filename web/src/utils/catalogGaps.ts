@@ -32,7 +32,7 @@ export function catalogGapForKind(
         focus: 'expense-categories',
         title: 'Expense categories',
         description:
-          'Add at least one expense category (or load the suggested defaults) before logging expenses.',
+          'Add at least one expense category before logging expenses.',
       };
     }
     if (ctx.expensePurposes.length === 0) {
@@ -52,7 +52,7 @@ export function catalogGapForKind(
         focus: 'income-categories',
         title: 'Income categories',
         description:
-          'Add at least one income category (or load the suggested defaults) before logging income.',
+          'Add at least one income category before logging income.',
       };
     }
     return null;
@@ -63,7 +63,7 @@ export function catalogGapForKind(
       focus: 'cash-movement-types',
       title: 'Cash movement types',
       description:
-        'Define cash movement types and subtypes (or load the suggested defaults).',
+        'Define cash movement types and subtypes.',
     };
   }
 

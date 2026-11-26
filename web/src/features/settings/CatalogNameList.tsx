@@ -35,7 +35,6 @@ export function CatalogNameList({
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
-  const [success, setSuccess] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
 
@@ -43,7 +42,6 @@ export function CatalogNameList({
     setEditingId(item.id);
     setEditName(item.name);
     setMessage('');
-    setSuccess('');
   }
 
   function cancelEdit() {
@@ -55,12 +53,10 @@ export function CatalogNameList({
     event.preventDefault();
     setBusy(true);
     setMessage('');
-    setSuccess('');
     try {
       const trimmed = name.trim();
       await onAdd(trimmed);
       setName('');
-      setSuccess(`Added “${trimmed}”.`);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Could not add item.');
     } finally {
@@ -77,10 +73,8 @@ export function CatalogNameList({
     }
     setBusy(true);
     setMessage('');
-    setSuccess('');
     try {
       await onRename(editingId, trimmed);
-      setSuccess(`Saved as “${trimmed}”.`);
       cancelEdit();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Could not save changes.');
@@ -91,11 +85,9 @@ export function CatalogNameList({
 
   async function remove(id: number, label: string) {
     setMessage('');
-    setSuccess('');
     try {
       await onDelete(id);
       if (editingId === id) cancelEdit();
-      setSuccess(`Removed “${label}”.`);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Could not remove item.');
     }
@@ -120,11 +112,6 @@ export function CatalogNameList({
       {message && (
         <Alert severity="error" sx={{ mb: 2, borderRadius: 0 }} onClose={() => setMessage('')}>
           {message}
-        </Alert>
-      )}
-      {success && (
-        <Alert severity="success" sx={{ mb: 2, borderRadius: 0 }} onClose={() => setSuccess('')}>
-          {success}
         </Alert>
       )}
 

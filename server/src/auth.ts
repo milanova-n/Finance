@@ -2,7 +2,12 @@ import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from './config.js';
 
-export type AuthUser = { id: number; username: string; fullName: string };
+export type AuthUser = {
+  id: number;
+  email: string;
+  username: string | null;
+  fullName: string;
+};
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -29,7 +34,8 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     const payload = jwt.verify(token, config.jwtSecret) as AuthUser;
     req.user = {
       id: payload.id,
-      username: payload.username,
+      email: payload.email,
+      username: payload.username ?? null,
       fullName: payload.fullName,
     };
     next();

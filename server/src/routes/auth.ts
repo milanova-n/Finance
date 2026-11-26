@@ -1,20 +1,33 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import { sql } from 'drizzle-orm';
+import { or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db.js';
-import { accounts, categories, users } from '../db/schema.js';
+import { users } from '../db/schema.js';
 import { requireAuth, signToken } from '../auth.js';
-import {
-  DEFAULT_EXPENSE_CATEGORIES,
-  DEFAULT_INCOME_CATEGORIES,
-} from '../catalogDefaults.js';
 
 export const authRouter = Router();
 
-const registerSchema = z.object({
-  fullName: z.string().trim().min(1, 'Enter your name.').max(120),
-  username: z
+const fullNameSchema = z
+  .string()
+  .trim()
+  .min(1, 'Enter your full name.')
+  .max(120)
+  .refine(
+    (name) => name.split(/\s+/).filter(Boolean).length >= 2,
+    'Enter at least first and family name.'
+  );
+
+const emailSchema = z
+  .string()
+  .trim()
+  .min(1, 'Enter your email.')
+  .email('Enter a valid email address.')
+  .max(254);
+
+const optionalUsernameSchema = z.preprocess(
+  (val) => (typeof val === 'string' && val.trim() === '' ? undefined : val),
+  z
     .string()
     .trim()
     .min(3, 'Username needs at least 3 characters.')
@@ -22,8 +35,23 @@ const registerSchema = z.object({
     .regex(
       /^[a-zA-Z0-9_.-]+$/,
       'Use letters, numbers, dots, dashes or underscores.'
-    ),
-  password: z.string().min(6, 'Password needs at least 6 characters.').max(200),
+    )
+    .optional()
+);
+
+const registerSchema = z.object({
+  fullName: fullNameSchema,
+  email: emailSchema,
+  username: optionalUsernameSchema,
+  password: z
+    .string()
+    .min(15, 'Password must be at least 15 characters long.')
+    .max(64, 'Password must not exceed 64 characters.'),
+});
+
+const loginSchema = z.object({
+  login: z.string().trim().min(1, 'Enter your email or username.'),
+  password: z.string().min(1, 'Enter your password.'),
 });
 
 authRouter.post('/register', async (req, res, next) => {
@@ -32,61 +60,54 @@ authRouter.post('/register', async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.issues[0].message });
     }
-    const { fullName, username, password } = parsed.data;
+    const { fullName, email, username, password } = parsed.data;
 
-    const [existing] = await db
+    const [existingEmail] = await db
       .select({ id: users.id })
       .from(users)
-      .where(sql`lower(${users.username}) = lower(${username})`)
+      .where(sql`lower(${users.email}) = lower(${email})`)
       .limit(1);
 
-    if (existing) {
+    if (existingEmail) {
       return res
         .status(409)
-        .json({ error: 'That username is taken. Pick another.' });
+        .json({ error: 'An account with that email already exists.' });
+    }
+
+    if (username) {
+      const [existingUsername] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(sql`lower(${users.username}) = lower(${username})`)
+        .limit(1);
+
+      if (existingUsername) {
+        return res
+          .status(409)
+          .json({ error: 'That username is taken. Pick another.' });
+      }
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const user = await db.transaction(async (tx) => {
-      const [created] = await tx
-        .insert(users)
-        .values({ fullName, username, passwordHash })
-        .returning({
-          id: users.id,
-          username: users.username,
-          fullName: users.fullName,
-        });
-
-      // Give every new account a starting Cash account and a usable set of
-      // categories, so the first expense can be logged without setup.
-      await tx.insert(accounts).values({
-        userId: created.id,
-        name: 'Cash',
-        kind: 'cash',
-        currency: 'EUR',
-        openingBalance: 0,
+    const [user] = await db
+      .insert(users)
+      .values({
+        fullName,
+        email: email.toLowerCase(),
+        username: username ?? null,
+        passwordHash,
+      })
+      .returning({
+        id: users.id,
+        email: users.email,
+        username: users.username,
+        fullName: users.fullName,
       });
-
-      for (const name of DEFAULT_EXPENSE_CATEGORIES) {
-        await tx.insert(categories).values({
-          userId: created.id,
-          name,
-          kind: 'expense',
-        });
-      }
-      for (const name of DEFAULT_INCOME_CATEGORIES) {
-        await tx.insert(categories).values({
-          userId: created.id,
-          name,
-          kind: 'income',
-        });
-      }
-      return created;
-    });
 
     const authUser = {
       id: user.id,
+      email: user.email,
       username: user.username,
       fullName: user.fullName,
     };
@@ -98,26 +119,28 @@ authRouter.post('/register', async (req, res, next) => {
 
 authRouter.post('/login', async (req, res, next) => {
   try {
-    const schema = z.object({
-      username: z.string().trim().min(1),
-      password: z.string().min(1),
-    });
-    const parsed = schema.safeParse(req.body);
+    const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ error: 'Enter your username and password.' });
+      return res.status(400).json({ error: parsed.error.issues[0].message });
     }
+
+    const login = parsed.data.login;
 
     const [user] = await db
       .select({
         id: users.id,
+        email: users.email,
         username: users.username,
         fullName: users.fullName,
         passwordHash: users.passwordHash,
       })
       .from(users)
-      .where(sql`lower(${users.username}) = lower(${parsed.data.username})`)
+      .where(
+        or(
+          sql`lower(${users.email}) = lower(${login})`,
+          sql`lower(${users.username}) = lower(${login})`
+        )
+      )
       .limit(1);
 
     const ok = user
@@ -126,11 +149,12 @@ authRouter.post('/login', async (req, res, next) => {
     if (!user || !ok) {
       return res
         .status(401)
-        .json({ error: 'That username and password do not match.' });
+        .json({ error: 'That email or username and password do not match.' });
     }
 
     const authUser = {
       id: user.id,
+      email: user.email,
       username: user.username,
       fullName: user.fullName,
     };

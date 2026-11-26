@@ -1,5 +1,5 @@
 import { shortDate } from './format';
-import { loadCashMovements } from './transactionLocal';
+import type { CashMovementRow } from './cashMovementsApi';
 import type { Account } from '../types';
 
 export type AccountCashStats = {
@@ -10,12 +10,13 @@ export type AccountCashStats = {
 
 export function accountCashMovementStats(
   accountId: number,
+  rows: CashMovementRow[],
   options?: { excludeCashMovementId?: number }
 ): AccountCashStats {
   const dates: string[] = [];
   let net = 0;
 
-  for (const row of loadCashMovements()) {
+  for (const row of rows) {
     if (options?.excludeCashMovementId === row.id) continue;
     if (
       row.initiatorAccountId === accountId &&
@@ -48,24 +49,50 @@ export function accountCashMovementStats(
 export type LatestAccountActivitySource = 'income' | 'expense' | 'cashflow';
 
 export type LatestAccountActivity = {
-  date: string;
   source: LatestAccountActivitySource;
+  date: string;
+  label: string;
 };
 
-/** Most recent ledger or cash movement date on this account, and which line it came from. */
+export function accountDisplayBalance(
+  account: Pick<Account, 'balance' | 'reconciledBalance'>,
+  cash: AccountCashStats
+): number {
+  if (account.reconciledBalance != null && Number.isFinite(account.reconciledBalance)) {
+    return account.reconciledBalance;
+  }
+  return account.balance + cash.net;
+}
+
+export function accountCashflowAmount(cash: AccountCashStats): number {
+  return cash.net;
+}
+
 export function latestAccountActivity(
   account: Account,
   cash: AccountCashStats
 ): LatestAccountActivity | null {
   const candidates: LatestAccountActivity[] = [];
   if (account.incomeLastDate) {
-    candidates.push({ date: account.incomeLastDate, source: 'income' });
+    candidates.push({
+      source: 'income',
+      date: account.incomeLastDate,
+      label: 'Income',
+    });
   }
   if (account.expenseLastDate) {
-    candidates.push({ date: account.expenseLastDate, source: 'expense' });
+    candidates.push({
+      source: 'expense',
+      date: account.expenseLastDate,
+      label: 'Expense',
+    });
   }
   if (cash.lastDate) {
-    candidates.push({ date: cash.lastDate, source: 'cashflow' });
+    candidates.push({
+      source: 'cashflow',
+      date: cash.lastDate,
+      label: 'Cash movement',
+    });
   }
   if (candidates.length === 0) return null;
   candidates.sort((a, b) => b.date.localeCompare(a.date));
@@ -74,24 +101,7 @@ export function latestAccountActivity(
 
 export function formatLatestAccountActivity(
   activity: LatestAccountActivity | null
-): string | null {
-  if (!activity) return null;
-  return `${shortDate(activity.date)}`;
-}
-
-/** Ledger net (income − expense) plus local cash transfers in/out of this account. */
-export function accountCashflowAmount(cash: AccountCashStats): number {
-  return cash.net;
-}
-
-export function accountDisplayBalance(
-  account: Account,
-  cash: AccountCashStats
-): number {
-  return (
-    account.openingBalance +
-    account.incomeTotal -
-    account.expenseTotal +
-    cash.net
-  );
+): string {
+  if (!activity) return 'No activity yet';
+  return `${activity.label} · ${shortDate(activity.date)}`;
 }

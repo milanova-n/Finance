@@ -3,8 +3,16 @@ import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db.js';
 import { accounts, expenses, incomes } from '../db/schema.js';
+import { moneyString, todayIsoDate } from '../ledgerValues.js';
+import {
+  reconciledCurrentBalance,
+  reconciliationMetaByAccount,
+} from '../reconciliation.js';
+import { reconciliationRouter } from './reconciliation.js';
 
 export const accountsRouter = Router();
+
+accountsRouter.use('/:accountId/reconciliation', reconciliationRouter);
 
 /**
  * An account's current balance is never stored — it is derived, so it can
@@ -29,8 +37,8 @@ const BALANCE_SQL = `
     SELECT
       account_id,
       SUM(amount) AS total,
-      to_char(MIN(received_on), 'YYYY-MM-DD') AS "firstDate",
-      to_char(MAX(received_on), 'YYYY-MM-DD') AS "lastDate"
+      to_char(MIN(date), 'YYYY-MM-DD') AS "firstDate",
+      to_char(MAX(date), 'YYYY-MM-DD') AS "lastDate"
     FROM incomes
     WHERE user_id = $1
     GROUP BY account_id
@@ -39,8 +47,8 @@ const BALANCE_SQL = `
     SELECT
       account_id,
       SUM(amount) AS total,
-      to_char(MIN(spent_on), 'YYYY-MM-DD') AS "firstDate",
-      to_char(MAX(spent_on), 'YYYY-MM-DD') AS "lastDate"
+      to_char(MIN(date), 'YYYY-MM-DD') AS "firstDate",
+      to_char(MAX(date), 'YYYY-MM-DD') AS "lastDate"
     FROM expenses
     WHERE user_id = $1
     GROUP BY account_id
@@ -80,7 +88,26 @@ async function listAccountsWithBalances(userId: number) {
     ORDER BY a.created_at
   `);
 
-  return result.rows;
+  const rows = result.rows.map((row) => ({
+    ...row,
+    openingBalance: Number(row.openingBalance),
+    incomeTotal: Number(row.incomeTotal),
+    expenseTotal: Number(row.expenseTotal),
+    balance: Number(row.balance),
+  }));
+
+  const meta = await reconciliationMetaByAccount(userId);
+
+  const enriched = await Promise.all(
+    rows.map(async (row) => ({
+      ...row,
+      reconciledBalance: await reconciledCurrentBalance(userId, row.id),
+      adjustmentsTotal: meta.adjustments.get(row.id) ?? 0,
+      reconciledThrough: meta.reconciledThrough.get(row.id) ?? null,
+    }))
+  );
+
+  return enriched;
 }
 
 
@@ -135,7 +162,8 @@ accountsRouter.post('/', async (req, res, next) => {
         name,
         kind,
         currency,
-        openingBalance,
+        openingBalance: moneyString(openingBalance),
+        openingDate: todayIsoDate(),
       })
       .returning({ id: accounts.id });
 
@@ -156,7 +184,12 @@ accountsRouter.put('/:id', async (req, res, next) => {
 
     const [updated] = await db
       .update(accounts)
-      .set({ name, kind, currency, openingBalance })
+      .set({
+        name,
+        kind,
+        currency,
+        openingBalance: moneyString(openingBalance),
+      })
       .where(and(eq(accounts.id, accountId), eq(accounts.userId, req.user!.id)))
       .returning({ id: accounts.id });
 

@@ -14,7 +14,7 @@ import type { Category, ExpensePurpose } from '../../types';
 import {
   addExpensePurpose,
   deleteExpensePurpose,
-  loadExpensePurposes,
+  fetchExpensePurposes,
   renameExpensePurpose,
 } from '../../utils/expensePurposeCatalog';
 import {
@@ -22,10 +22,12 @@ import {
   addCashMovementType,
   deleteCashMovementSubtype,
   deleteCashMovementType,
-  loadCashMovementTypes,
+  fetchCashMovementSubtypes,
+  fetchCashMovementTypes,
   renameCashMovementSubtype,
   renameCashMovementType,
   subtypesForType,
+  type CashMovementSubtype,
   type CashMovementType,
 } from '../../utils/cashMovementCatalog';
 import { CatalogNameList } from './CatalogNameList';
@@ -67,6 +69,7 @@ export function SettingsCatalogSection() {
   const [incomeCategories, setIncomeCategories] = useState<Category[]>([]);
   const [expensePurposes, setExpensePurposes] = useState<ExpensePurpose[]>([]);
   const [cashTypes, setCashTypes] = useState<CashMovementType[]>([]);
+  const [cashSubtypes, setCashSubtypes] = useState<CashMovementSubtype[]>([]);
   const [selectedTypeId, setSelectedTypeId] = useState<string>('');
   const [catalogRevision, setCatalogRevision] = useState(0);
   const [error, setError] = useState('');
@@ -80,12 +83,13 @@ export function SettingsCatalogSection() {
     [cashTypes, selectedTypeId]
   );
   const subtypes = useMemo(
-    () => (selectedType ? subtypesForType(selectedType.id) : []),
-    [selectedType, catalogRevision]
+    () =>
+      selectedType ? subtypesForType(cashSubtypes, selectedType.id) : [],
+    [selectedType, cashSubtypes, catalogRevision]
   );
 
-  const reloadLocalPurposes = useCallback(() => {
-    setExpensePurposes(loadExpensePurposes());
+  const reloadPurposes = useCallback(async () => {
+    setExpensePurposes(await fetchExpensePurposes());
     bumpLocalCatalog();
   }, [bumpLocalCatalog]);
 
@@ -98,9 +102,13 @@ export function SettingsCatalogSection() {
     setIncomeCategories(income);
   }, []);
 
-  const reloadCashCatalog = useCallback(() => {
-    const types = loadCashMovementTypes();
+  const reloadCashCatalog = useCallback(async () => {
+    const [types, subtypes] = await Promise.all([
+      fetchCashMovementTypes(),
+      fetchCashMovementSubtypes(),
+    ]);
     setCashTypes(types);
+    setCashSubtypes(subtypes);
     setSelectedTypeId((prev) => {
       if (prev && types.some((t) => String(t.id) === prev)) return prev;
       return types[0] ? String(types[0].id) : '';
@@ -110,9 +118,9 @@ export function SettingsCatalogSection() {
 
   const reloadAll = useCallback(async () => {
     await reloadServerCatalogs();
-    reloadLocalPurposes();
-    reloadCashCatalog();
-  }, [reloadServerCatalogs, reloadLocalPurposes, reloadCashCatalog]);
+    await reloadPurposes();
+    await reloadCashCatalog();
+  }, [reloadServerCatalogs, reloadPurposes, reloadCashCatalog]);
 
   useEffect(() => {
     reloadAll().catch((err) =>
@@ -148,8 +156,7 @@ export function SettingsCatalogSection() {
   return (
     <Stack spacing={2}>
       <Typography variant="body2" color="text.secondary">
-        These labels populate dropdowns when you add transactions. Categories
-        are stored on the server; purposes and cash types stay in this browser.
+        These labels populate dropdowns when you add transactions.
       </Typography>
 
       {error && (
@@ -221,18 +228,18 @@ export function SettingsCatalogSection() {
           description="What an expense is for."
           items={expensePurposes}
           onAdd={async (name) => {
-            addExpensePurpose(name);
-            reloadLocalPurposes();
+            await addExpensePurpose(name);
+            await reloadPurposes();
             publishChange();
           }}
           onRename={async (id, name) => {
-            renameExpensePurpose(id, name);
-            reloadLocalPurposes();
+            await renameExpensePurpose(id, name);
+            await reloadPurposes();
             publishChange();
           }}
           onDelete={async (id) => {
-            deleteExpensePurpose(id);
-            reloadLocalPurposes();
+            await deleteExpensePurpose(id);
+            await reloadPurposes();
             publishChange();
           }}
         />
@@ -245,19 +252,19 @@ export function SettingsCatalogSection() {
             description="High-level transfer kinds."
             items={cashTypes}
             onAdd={async (name) => {
-              addCashMovementType(name);
-              reloadCashCatalog();
+              await addCashMovementType(name);
+              await reloadCashCatalog();
               publishChange();
             }}
             onRename={async (id, name) => {
-              renameCashMovementType(id, name);
-              reloadCashCatalog();
+              await renameCashMovementType(id, name);
+              await reloadCashCatalog();
               publishChange();
             }}
             onDelete={async (id) => {
-              deleteCashMovementType(id);
+              await deleteCashMovementType(id);
               if (String(id) === selectedTypeId) setSelectedTypeId('');
-              reloadCashCatalog();
+              await reloadCashCatalog();
               publishChange();
             }}
           />
@@ -297,18 +304,18 @@ export function SettingsCatalogSection() {
               if (!selectedType) {
                 throw new Error('Select a cash movement type first.');
               }
-              addCashMovementSubtype(selectedType.id, name);
-              bumpLocalCatalog();
+              await addCashMovementSubtype(selectedType.id, name);
+              await reloadCashCatalog();
               publishChange();
             }}
             onRename={async (id, name) => {
-              renameCashMovementSubtype(id, name);
-              bumpLocalCatalog();
+              await renameCashMovementSubtype(id, name);
+              await reloadCashCatalog();
               publishChange();
             }}
             onDelete={async (id) => {
-              deleteCashMovementSubtype(id);
-              bumpLocalCatalog();
+              await deleteCashMovementSubtype(id);
+              await reloadCashCatalog();
               publishChange();
             }}
             addLabel="Add subtype"

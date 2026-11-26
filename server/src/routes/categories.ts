@@ -100,29 +100,46 @@ categoriesRouter.put('/:id', async (req, res, next) => {
       return res.status(400).json({ error: parsed.error.issues[0].message });
     }
 
-    const current = await one<{ kind: string }>(
-      'SELECT kind FROM categories WHERE id = $1 AND user_id = $2',
-      [req.params.id, req.user!.id]
-    );
+    const categoryId = Number(req.params.id);
+
+    const [current] = await db
+      .select({ id: categories.id, kind: categories.kind })
+      .from(categories)
+      .where(
+        and(eq(categories.id, categoryId), eq(categories.userId, req.user!.id))
+      )
+      .limit(1);
     if (!current) return res.status(404).json({ error: 'Category not found.' });
 
-    const duplicate = await one(
-      `SELECT id FROM categories
-       WHERE user_id = $1 AND kind = $2 AND lower(name) = lower($3) AND id <> $4`,
-      [req.user!.id, current.kind, parsed.data.name, req.params.id]
-    );
+    const [duplicate] = await db
+      .select({ id: categories.id })
+      .from(categories)
+      .where(
+        and(
+          eq(categories.userId, req.user!.id),
+          eq(categories.kind, current.kind),
+          sql`lower(${categories.name}) = lower(${parsed.data.name})`,
+          sql`${categories.id} <> ${categoryId}`
+        )
+      )
+      .limit(1);
     if (duplicate) {
       return res
         .status(409)
         .json({ error: 'You already have a category with that name.' });
     }
 
-    const updated = await one(
-      `UPDATE categories SET name = $1
-       WHERE id = $2 AND user_id = $3
-       RETURNING id, name, kind`,
-      [parsed.data.name, req.params.id, req.user!.id]
-    );
+    const [updated] = await db
+      .update(categories)
+      .set({ name: parsed.data.name })
+      .where(
+        and(eq(categories.id, categoryId), eq(categories.userId, req.user!.id))
+      )
+      .returning({
+        id: categories.id,
+        name: categories.name,
+        kind: categories.kind,
+      });
     res.json(updated);
   } catch (err) {
     next(err);

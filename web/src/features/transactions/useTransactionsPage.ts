@@ -21,28 +21,36 @@ import type {
 } from '../../types';
 import {
   addCustomFieldDefinition,
-  cashToTransaction,
-  deleteCashMovement,
   deleteCustomFieldDefinition,
-  deleteCustomFieldValues,
-  entryToTransaction,
+  fetchCustomFieldDefinitions,
   findCustomFieldDuplicate,
-  loadCashMovements,
-  loadCustomFieldDefinitions,
-  setCustomFieldValues,
-  sortTransactions,
   updateCustomFieldDefinition,
-  upsertCashMovement,
   validateCustomFieldValues,
-} from '../../utils/transactionLocal';
+} from '../../utils/customFieldsApi';
 import {
+  cashRowToTransaction,
+  createCashMovement,
+  deleteCashMovement,
+  fetchCashMovements,
+  updateCashMovement,
+  type CashMovementRow,
+} from '../../utils/cashMovementsApi';
+import {
+  adjustmentRowToTransaction,
+  entryToTransaction,
+  sortTransactions,
+} from '../../utils/transactionMappers';
+import { fetchBalanceAdjustments } from '../../utils/balanceAdjustmentsApi';
+import {
+  fetchCashMovementSubtypes,
+  fetchCashMovementTypes,
   findSubtypeByName,
   findTypeByName,
-  loadCashMovementSubtypes,
-  loadCashMovementTypes,
   subtypesForType,
+  type CashMovementSubtype,
   type CashMovementType,
 } from '../../utils/cashMovementCatalog';
+import { fetchExpensePurposes } from '../../utils/expensePurposeCatalog';
 import {
   catalogGapForKind,
   type CatalogGap,
@@ -58,11 +66,6 @@ import {
   resolveCashAccountFieldValue,
   toCashAccountSelectValue,
 } from '../../utils/cashMovementValidation';
-import {
-  deleteExpensePurposeValue,
-  loadExpensePurposes,
-  setExpensePurpose,
-} from '../../utils/expensePurposeCatalog';
 import { catalogChanged, notifyCatalogChanged } from '../../utils/catalogEvents';
 import { blankCashDraft, blankLedgerDraft } from './draft';
 import { defaultKindForView, NEW_CATEGORY, type Draft } from './types';
@@ -89,6 +92,12 @@ export function useTransactionsPage() {
   const [incomeCategories, setIncomeCategories] = useState<Category[]>([]);
   const [expensePurposes, setExpensePurposes] = useState<ExpensePurpose[]>([]);
   const [cashTypes, setCashTypes] = useState<CashMovementType[]>([]);
+  const [allCashSubtypes, setAllCashSubtypes] = useState<CashMovementSubtype[]>(
+    []
+  );
+  const [cashMovementRows, setCashMovementRows] = useState<CashMovementRow[]>(
+    []
+  );
   const [catalogStamp, setCatalogStamp] = useState(0);
   const [expenseFieldDefs, setExpenseFieldDefs] = useState<
     CustomFieldDefinition[]
@@ -133,9 +142,13 @@ export function useTransactionsPage() {
     if (!open) resetCustomColumnUi();
   }, [open, resetCustomColumnUi]);
 
-  const refreshFieldDefs = useCallback(() => {
-    setExpenseFieldDefs(loadCustomFieldDefinitions('expense'));
-    setIncomeFieldDefs(loadCustomFieldDefinitions('income'));
+  const refreshFieldDefs = useCallback(async () => {
+    const [expense, income] = await Promise.all([
+      fetchCustomFieldDefinitions('expense'),
+      fetchCustomFieldDefinitions('income'),
+    ]);
+    setExpenseFieldDefs(expense);
+    setIncomeFieldDefs(income);
   }, []);
 
   const loadRows = useCallback(() => {
@@ -149,25 +162,38 @@ export function useTransactionsPage() {
         entries.map((entry) => entryToTransaction(entry, kind))
       );
 
-    const tasks: Promise<Transaction[]>[] = [];
+    const ledgerTasks: Promise<Transaction[]>[] = [];
 
     if (view === 'all' || view === 'expenses') {
-      tasks.push(fetchLedger('/expenses', 'expense'));
+      ledgerTasks.push(fetchLedger('/expenses', 'expense'));
     }
     if (view === 'all' || view === 'income') {
-      tasks.push(fetchLedger('/incomes', 'income'));
-    }
-    if (view === 'all' || view === 'cash') {
-      tasks.push(
-        Promise.resolve(
-          loadCashMovements().map((row) => cashToTransaction(row, accounts))
-        )
-      );
+      ledgerTasks.push(fetchLedger('/incomes', 'income'));
     }
 
-    Promise.all(tasks)
-      .then((groups) => {
-        const merged = sortTransactions(groups.flat());
+    const adjustmentTask =
+      view === 'all'
+        ? fetchBalanceAdjustments({
+            accountId: filters.accountId || undefined,
+            from: filters.from || undefined,
+            to: filters.to || undefined,
+          }).then((adjRows) =>
+            adjRows.map((row) => adjustmentRowToTransaction(row))
+          )
+        : Promise.resolve([] as Transaction[]);
+
+    Promise.all([fetchCashMovements(qs), adjustmentTask, ...ledgerTasks])
+      .then(([cashRows, adjustmentTx, ...ledgerGroups]) => {
+        setCashMovementRows(cashRows);
+        const cashTx =
+          view === 'all' || view === 'cash'
+            ? cashRows.map((row) => cashRowToTransaction(row, accounts))
+            : [];
+        const merged = sortTransactions([
+          ...ledgerGroups.flat(),
+          ...cashTx,
+          ...adjustmentTx,
+        ]);
         setRows(merged);
       })
       .catch((err) => setError(err.message));
@@ -176,19 +202,34 @@ export function useTransactionsPage() {
   useEffect(loadRows, [loadRows]);
 
   const loadLookups = useCallback(() => {
-    refreshFieldDefs();
-    api<Account[]>('/accounts')
-      .then(setAccounts)
+    void refreshFieldDefs();
+    Promise.all([
+      api<Account[]>('/accounts'),
+      api<Category[]>('/categories?kind=expense'),
+      api<Category[]>('/categories?kind=income'),
+      fetchExpensePurposes(),
+      fetchCashMovementTypes(),
+      fetchCashMovementSubtypes(),
+    ])
+      .then(
+        ([
+          accountRows,
+          expenseCats,
+          incomeCats,
+          purposes,
+          types,
+          subtypes,
+        ]) => {
+          setAccounts(accountRows);
+          setExpenseCategories(expenseCats);
+          setIncomeCategories(incomeCats);
+          setExpensePurposes(purposes);
+          setCashTypes(types);
+          setAllCashSubtypes(subtypes);
+          setCatalogStamp((n) => n + 1);
+        }
+      )
       .catch((err) => setError(err.message));
-    api<Category[]>('/categories?kind=expense')
-      .then(setExpenseCategories)
-      .catch((err) => setError(err.message));
-    api<Category[]>('/categories?kind=income')
-      .then(setIncomeCategories)
-      .catch((err) => setError(err.message));
-    setExpensePurposes(loadExpensePurposes());
-    setCashTypes(loadCashMovementTypes());
-    setCatalogStamp((n) => n + 1);
   }, [refreshFieldDefs]);
 
   useEffect(loadLookups, [loadLookups]);
@@ -198,10 +239,6 @@ export function useTransactionsPage() {
     catalogChanged.addEventListener('change', onCatalogChange);
     return () => catalogChanged.removeEventListener('change', onCatalogChange);
   }, [loadLookups]);
-
-  useEffect(() => {
-    refreshFieldDefs();
-  }, [refreshFieldDefs]);
 
   const currency = accounts[0]?.currency ?? 'EUR';
   const noAccounts = accounts.length === 0;
@@ -226,12 +263,12 @@ export function useTransactionsPage() {
     ]
   );
 
-  const cashSubtypes = useMemo(() => {
+  const draftCashSubtypes = useMemo(() => {
     if (draft.kind !== 'cash') return [];
     const typeId = Number(draft.movementTypeId);
     if (!Number.isFinite(typeId) || draft.movementTypeId === '') return [];
-    return subtypesForType(typeId);
-  }, [draft, catalogStamp]);
+    return subtypesForType(allCashSubtypes, typeId);
+  }, [draft, allCashSubtypes, catalogStamp]);
 
   useEffect(() => {
     if (!open) return;
@@ -270,7 +307,9 @@ export function useTransactionsPage() {
         )
           ? current.movementTypeId
           : String(types[0]?.id ?? '');
-        const subs = typeId ? subtypesForType(Number(typeId)) : [];
+        const subs = typeId
+          ? subtypesForType(allCashSubtypes, Number(typeId))
+          : [];
         const subtypeId = subs.some(
           (s) => String(s.id) === current.movementSubtypeId
         )
@@ -296,6 +335,7 @@ export function useTransactionsPage() {
     incomeCategories,
     expensePurposes,
     cashTypes,
+    allCashSubtypes,
     catalogStamp,
   ]);
 
@@ -375,24 +415,26 @@ export function useTransactionsPage() {
       balanceForAccount: (accountId) => {
         const account = accounts.find((a) => a.id === accountId);
         if (!account) return 0;
-        const cash = accountCashMovementStats(accountId, {
-          excludeCashMovementId: excludeId,
-        });
+        const cash = accountCashMovementStats(
+          accountId,
+          cashMovementRows,
+          { excludeCashMovementId: excludeId }
+        );
         return accountDisplayBalance(account, cash);
       },
     });
-  }, [draft, accounts, editing]);
+  }, [draft, accounts, editing, cashMovementRows]);
 
   const openNewWithKind = useCallback(
     (kind: TransactionKind) => {
+      if (kind === 'adjustment') return;
       setEditing(null);
       setNewCategory('');
       setFormError('');
       if (kind === 'cash') {
-        const types = loadCashMovementTypes();
-        const firstType = types[0];
+        const firstType = cashTypes[0];
         const firstSub = firstType
-          ? subtypesForType(firstType.id)[0]
+          ? subtypesForType(allCashSubtypes, firstType.id)[0]
           : undefined;
         const first = String(accounts[0]?.id ?? '');
         setDraft({
@@ -415,7 +457,14 @@ export function useTransactionsPage() {
       }
       setOpen(true);
     },
-    [accounts, expenseCategories, incomeCategories, expensePurposes]
+    [
+      accounts,
+      expenseCategories,
+      incomeCategories,
+      expensePurposes,
+      cashTypes,
+      allCashSubtypes,
+    ]
   );
 
   const openNew = useCallback(() => {
@@ -429,6 +478,7 @@ export function useTransactionsPage() {
   const changeDraftKind = useCallback(
     (next: TransactionKind) => {
       if (editing) return;
+      if (next === 'adjustment') return;
       if (next === 'cash' && accounts.length < 1) return;
 
       setDraft((draft) => {
@@ -440,10 +490,9 @@ export function useTransactionsPage() {
         };
 
         if (next === 'cash') {
-          const types = loadCashMovementTypes();
-          const firstType = types[0];
+          const firstType = cashTypes[0];
           const firstSub = firstType
-            ? subtypesForType(firstType.id)[0]
+            ? subtypesForType(allCashSubtypes, firstType.id)[0]
             : undefined;
           return {
             ...blankCashDraft(),
@@ -474,20 +523,38 @@ export function useTransactionsPage() {
       expenseCategories,
       incomeCategories,
       expensePurposes,
+      cashTypes,
+      allCashSubtypes,
       resetCustomColumnUi,
     ]
   );
 
   const openEdit = useCallback((row: Transaction) => {
+    if (row.kind === 'adjustment') {
+      setError(
+        'Reconciliation adjustments are managed from Accounts → Reconcile month.'
+      );
+      return;
+    }
     setEditing(row);
     setNewCategory('');
     setFormError('');
     if (row.kind === 'cash') {
-      const matchedType = findTypeByName(row.movementType ?? '');
+      const subtypeFromId = row.movementSubtypeId
+        ? allCashSubtypes.find((s) => s.id === row.movementSubtypeId)
+        : undefined;
+      const matchedType = subtypeFromId
+        ? cashTypes.find((t) => t.id === subtypeFromId.typeId)
+        : findTypeByName(cashTypes, row.movementType ?? '');
       const matchedSubtype =
-        matchedType && row.movementSubtype
-          ? findSubtypeByName(matchedType.id, row.movementSubtype)
-          : undefined;
+        subtypeFromId ??
+        (matchedType && row.movementSubtype
+          ? findSubtypeByName(
+              allCashSubtypes,
+              matchedType.id,
+              row.movementSubtype
+            )
+          : undefined);
       setDraft({
         kind: 'cash',
         date: row.date,
@@ -516,7 +583,7 @@ export function useTransactionsPage() {
       });
     }
     setOpen(true);
-  }, []);
+  }, [cashTypes, allCashSubtypes]);
 
   const save = useCallback(
     async (event: FormEvent) => {
@@ -539,10 +606,8 @@ export function useTransactionsPage() {
         if (draft.kind === 'cash') {
           const typeId = Number(draft.movementTypeId);
           const subtypeId = Number(draft.movementSubtypeId);
-          const type = loadCashMovementTypes().find((t) => t.id === typeId);
-          const subtype = loadCashMovementSubtypes().find(
-            (s) => s.id === subtypeId
-          );
+          const type = cashTypes.find((t) => t.id === typeId);
+          const subtype = allCashSubtypes.find((s) => s.id === subtypeId);
           if (!type || !subtype || subtype.typeId !== type.id) {
             throw new Error('Choose a cash movement type and subtype.');
           }
@@ -556,9 +621,11 @@ export function useTransactionsPage() {
               if (!account) return 0;
               const excludeId =
                 editing?.kind === 'cash' ? editing.id : undefined;
-              const cash = accountCashMovementStats(accountId, {
-                excludeCashMovementId: excludeId,
-              });
+              const cash = accountCashMovementStats(
+                accountId,
+                cashMovementRows,
+                { excludeCashMovementId: excludeId }
+              );
               return accountDisplayBalance(account, cash);
             },
           });
@@ -573,20 +640,19 @@ export function useTransactionsPage() {
           const receiverAccountId = fromCashAccountSelectValue(
             draft.receiverAccountId
           );
-          upsertCashMovement({
-            id: editing?.kind === 'cash' ? editing.id : undefined,
+          const cashBody = {
             date: draft.date,
             amount: Number(draft.amount),
-            accountId:
-              initiatorAccountId > 0
-                ? initiatorAccountId
-                : receiverAccountId,
             comment: draft.comment,
-            movementType: type.name,
-            movementSubtype: subtype.name,
+            movementSubtypeId: subtypeId,
             initiatorAccountId,
             receiverAccountId,
-          });
+          };
+          if (editing?.kind === 'cash') {
+            await updateCashMovement(editing.id, cashBody);
+          } else {
+            await createCashMovement(cashBody);
+          }
         } else {
           let categoryId = draft.categoryId;
           if (categoryId === NEW_CATEGORY) {
@@ -601,15 +667,6 @@ export function useTransactionsPage() {
           }
 
           const path = draft.kind === 'expense' ? '/expenses' : '/incomes';
-          const body = {
-            date: draft.date,
-            amount: Number(draft.amount),
-            accountId: Number(draft.accountId),
-            categoryId: Number(categoryId),
-            comment: draft.comment,
-            ...(draft.kind === 'expense' ? { country: '' } : { from: '' }),
-          };
-
           const defs =
             draft.kind === 'expense' ? expenseFieldDefs : incomeFieldDefs;
           const validationError = validateCustomFieldValues(
@@ -620,20 +677,25 @@ export function useTransactionsPage() {
             throw new Error(validationError);
           }
 
-          let entryId: number;
+          const body = {
+            date: draft.date,
+            amount: Number(draft.amount),
+            accountId: Number(draft.accountId),
+            categoryId: Number(categoryId),
+            comment: draft.comment,
+            customFields: draft.customFields,
+            ...(draft.kind === 'expense'
+              ? { purposeId: Number(draft.purposeId) }
+              : {}),
+          };
+
           if (editing && editing.kind !== 'cash') {
             await api(`${path}/${editing.id}`, { method: 'PUT', body });
-            entryId = editing.id;
           } else {
-            const created = await api<{ id: number }>(path, {
+            await api<{ id: number }>(path, {
               method: 'POST',
               body,
             });
-            entryId = created.id;
-          }
-          setCustomFieldValues(draft.kind, entryId, draft.customFields);
-          if (draft.kind === 'expense') {
-            setExpensePurpose(entryId, Number(draft.purposeId));
           }
         }
 
@@ -661,6 +723,9 @@ export function useTransactionsPage() {
       incomeCategories,
       expensePurposes,
       cashTypes,
+      allCashSubtypes,
+      cashMovementRows,
+      accounts,
     ]
   );
 
@@ -672,15 +737,17 @@ export function useTransactionsPage() {
     async (row: Transaction) => {
       if (!confirm('Delete this transaction? This cannot be undone.')) return;
       try {
+        if (row.kind === 'adjustment') {
+          setError(
+            'Re-run Reconcile month for that account to change the adjustment.'
+          );
+          return;
+        }
         if (row.kind === 'cash') {
-          deleteCashMovement(row.id);
+          await deleteCashMovement(row.id);
         } else {
           const path = row.kind === 'expense' ? '/expenses' : '/incomes';
           await api(`${path}/${row.id}`, { method: 'DELETE' });
-          deleteCustomFieldValues(row.kind, row.id);
-          if (row.kind === 'expense') {
-            deleteExpensePurposeValue(row.id);
-          }
         }
         loadRows();
       } catch (err) {
@@ -694,46 +761,52 @@ export function useTransactionsPage() {
     [loadRows]
   );
 
-  const syncFieldDefsFor = useCallback((appliesTo: 'expense' | 'income') => {
-    if (appliesTo === 'expense') {
-      setExpenseFieldDefs(loadCustomFieldDefinitions('expense'));
-    } else {
-      setIncomeFieldDefs(loadCustomFieldDefinitions('income'));
-    }
+  const syncFieldDefsFor = useCallback(async (appliesTo: 'expense' | 'income') => {
+    const defs = await fetchCustomFieldDefinitions(appliesTo);
+    if (appliesTo === 'expense') setExpenseFieldDefs(defs);
+    else setIncomeFieldDefs(defs);
   }, []);
 
   const applyCustomFieldDefinition = useCallback(
-    (target: 'expense' | 'income', label: string, fieldType: CustomFieldType) => {
-      if (target === 'expense') {
-        setExpenseFieldDefs(
-          addCustomFieldDefinition('expense', label, fieldType)
-        );
-      } else {
-        setIncomeFieldDefs(
-          addCustomFieldDefinition('income', label, fieldType)
-        );
-      }
+    async (
+      target: 'expense' | 'income',
+      label: string,
+      fieldType: CustomFieldType
+    ) => {
+      const created = await addCustomFieldDefinition(target, label, fieldType);
+      await syncFieldDefsFor(created.appliesTo);
     },
-    []
+    [syncFieldDefsFor]
   );
 
   const newColumnDuplicate = useMemo(() => {
     if (draft.kind === 'cash' || !newColumnLabel.trim()) return undefined;
-    return findCustomFieldDuplicate(draft.kind, newColumnLabel);
-  }, [draft.kind, newColumnLabel]);
+    const defs =
+      draft.kind === 'expense' ? expenseFieldDefs : incomeFieldDefs;
+    return findCustomFieldDuplicate(defs, draft.kind, newColumnLabel);
+  }, [draft.kind, newColumnLabel, expenseFieldDefs, incomeFieldDefs]);
 
   const editColumnDuplicate = useMemo(() => {
     if (draft.kind === 'cash' || editingColumnId == null || !editColumnLabel.trim()) {
       return undefined;
     }
+    const defs =
+      draft.kind === 'expense' ? expenseFieldDefs : incomeFieldDefs;
     return findCustomFieldDuplicate(
+      defs,
       draft.kind,
       editColumnLabel,
       editingColumnId
     );
-  }, [draft.kind, editingColumnId, editColumnLabel]);
+  }, [
+    draft.kind,
+    editingColumnId,
+    editColumnLabel,
+    expenseFieldDefs,
+    incomeFieldDefs,
+  ]);
 
-  const addCustomColumn = useCallback(() => {
+  const addCustomColumn = useCallback(async () => {
     if (draft.kind === 'cash') return;
     setCustomColumnMessage('');
     try {
@@ -742,7 +815,11 @@ export function useTransactionsPage() {
           `A column called “${newColumnDuplicate.label}” already exists.`
         );
       }
-      applyCustomFieldDefinition(draft.kind, newColumnLabel, newColumnType);
+      await applyCustomFieldDefinition(
+        draft.kind,
+        newColumnLabel,
+        newColumnType
+      );
       setNewColumnLabel('');
       setNewColumnType('string');
     } catch (err) {
@@ -772,7 +849,7 @@ export function useTransactionsPage() {
     setCustomColumnMessage('');
   }, []);
 
-  const saveEditCustomColumn = useCallback(() => {
+  const saveEditCustomColumn = useCallback(async () => {
     if (draft.kind === 'cash' || editingColumnId == null) return;
     setCustomColumnMessage('');
     try {
@@ -787,12 +864,12 @@ export function useTransactionsPage() {
       if (!editingDef) throw new Error('Column not found.');
 
       const oldKey = editingDef.fieldKey;
-      const saved = updateCustomFieldDefinition(
+      const saved = await updateCustomFieldDefinition(
         editingColumnId,
         editColumnLabel,
         editColumnType
       );
-      syncFieldDefsFor(saved.appliesTo);
+      await syncFieldDefsFor(saved.appliesTo);
 
       if (
         draft.kind === saved.appliesTo &&
@@ -847,11 +924,11 @@ export function useTransactionsPage() {
   );
 
   const removeCustomColumn = useCallback(
-    (def: CustomFieldDefinition) => {
+    async (def: CustomFieldDefinition) => {
       const scope = def.appliesTo === 'expense' ? 'expense' : 'income';
       if (
         !confirm(
-          `Remove “${def.label}” from all ${scope} transactions? Saved values will be deleted.`
+          `Remove “${def.label}” from all ${scope} transactions? Saved values for this column are no longer shown in the grid.`
         )
       ) {
         return;
@@ -861,7 +938,7 @@ export function useTransactionsPage() {
         setEditingColumnId(null);
       }
       try {
-        deleteCustomFieldDefinition(def.id);
+        await deleteCustomFieldDefinition(def.id);
         applyCustomFieldDefinitionAfterRemove(def);
       } catch (err) {
         setCustomColumnMessage(
@@ -892,7 +969,8 @@ export function useTransactionsPage() {
     incomeCategories,
     expensePurposes,
     cashTypes,
-    cashSubtypes,
+    allCashSubtypes,
+    cashSubtypes: draftCashSubtypes,
     catalogGap,
     goToCatalogSetup,
     expenseFieldDefs,

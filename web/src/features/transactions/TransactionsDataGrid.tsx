@@ -317,7 +317,11 @@ export function TransactionsDataGrid({
             <CategoryChip
               label={String(params.value)}
               size="small"
-              flow={tx.kind === 'income' ? 'earn' : undefined}
+              flow={
+                tx.kind === 'income'
+                  ? 'earn'
+                  : undefined
+              }
             />
           );
         },
@@ -437,29 +441,36 @@ export function TransactionsDataGrid({
               ? 'earn'
               : tx.kind === 'expense'
                 ? 'spend'
-                : undefined;
+                : tx.kind === 'adjustment'
+                  ? tx.amount >= 0
+                    ? 'earn'
+                    : 'spend'
+                  : undefined;
+          const displayAmount =
+            tx.kind === 'adjustment' ? tx.amount : tx.amount;
           return (
             <Amount component="span" flow={flow} strong>
-              {money(tx.amount, tx.currency)}
+              {money(displayAmount, tx.currency)}
             </Amount>
           );
         },
       },
       {
         field: 'actions',
-        headerName: '',
+        headerName: 'Actions',
         width: 148,
         sortable: false,
         filterable: false,
         disableColumnMenu: true,
+        headerAlign: 'center',
         renderCell: (params) => {
           const tx = params.row.transaction;
           return (
             <RowActions>
-              <Button size="small" onClick={() => onEdit(tx)}>
+              <Button size="small" onClick={() => onEdit(tx)} disabled={tx.kind === 'adjustment'}>
                 Edit
               </Button>
-              <Button size="small" color="error" onClick={() => onDelete(tx)}>
+              <Button size="small" color="error" onClick={() => onDelete(tx)} disabled={tx.kind === 'adjustment'}>
                 Delete
               </Button>
             </RowActions>

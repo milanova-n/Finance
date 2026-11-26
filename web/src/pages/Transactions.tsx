@@ -49,6 +49,7 @@ export function Transactions() {
         incomeCategories={page.incomeCategories}
         expensePurposes={page.expensePurposes}
         cashTypes={page.cashTypes}
+        allCashSubtypes={page.allCashSubtypes}
         cashSubtypes={page.cashSubtypes}
         catalogGap={page.catalogGap}
         onGoToCatalogSetup={page.goToCatalogSetup}

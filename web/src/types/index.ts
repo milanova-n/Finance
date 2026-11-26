@@ -1,4 +1,9 @@
-export type User = { id: number; username: string; fullName: string };
+export type User = {
+  id: number;
+  email: string;
+  username: string | null;
+  fullName: string;
+};
 
 export type AccountKind = 'cash' | 'bank' ;
 
@@ -15,13 +20,17 @@ export type Account = {
   incomeLastDate: string | null;
   expenseFirstDate: string | null;
   expenseLastDate: string | null;
+  /** When set, current balance is anchored on the latest reconciled month. */
+  reconciledBalance?: number | null;
+  adjustmentsTotal?: number;
+  reconciledThrough?: string | null;
 };
 
 export type Category = { id: number; name: string; kind: 'expense' | 'income' };
 
 export type ExpensePurpose = { id: number; name: string };
 
-export type TransactionKind = 'expense' | 'income' | 'cash';
+export type TransactionKind = 'expense' | 'income' | 'cash' | 'adjustment';
 
 export type CustomFieldType = 'string' | 'date' | 'number' | 'boolean';
 
@@ -58,12 +67,15 @@ export type Transaction = {
   purposeId?: number | null;
   purposeName?: string | null;
   customFields: Record<string, string>;
+  movementSubtypeId?: number | null;
   movementType?: string | null;
   movementSubtype?: string | null;
   initiatorAccountId?: number | null;
   initiatorAccountName?: string | null;
   receiverAccountId?: number | null;
   receiverAccountName?: string | null;
+  /** First day of reconciled month (YYYY-MM-DD), for adjustment rows. */
+  reconciliationPeriod?: string | null;
 };
 
 export type Entry = {
@@ -78,6 +90,7 @@ export type Entry = {
   categoryName: string;
   purposeId?: number | null;
   purposeName?: string | null;
+  customFields?: Record<string, string> | null;
   country?: string;
   from?: string;
 };
@@ -95,6 +108,7 @@ export const TRANSACTION_KIND_LABELS: Record<TransactionKind, string> = {
   expense: 'Expense',
   income: 'Income',
   cash: 'Cash movement',
+  adjustment: 'Reconciliation',
 };
 
 export type TransactionView = 'all' | 'expenses' | 'income' | 'cash';

@@ -63,6 +63,7 @@ type Props = {
   incomeCategories: Category[];
   expensePurposes: ExpensePurpose[];
   cashTypes: CashMovementType[];
+  allCashSubtypes: CashMovementSubtype[];
   cashSubtypes: CashMovementSubtype[];
   catalogGap: CatalogGap | null;
   onGoToCatalogSetup: () => void;
@@ -77,6 +78,7 @@ export function TransactionFormDialog({
   incomeCategories,
   expensePurposes,
   cashTypes,
+  allCashSubtypes,
   cashSubtypes,
   catalogGap,
   onGoToCatalogSetup,
@@ -248,18 +250,7 @@ export function TransactionFormDialog({
                     {category.name}
                   </MenuItem>
                 ))}
-                <MenuItem value={NEW_CATEGORY}>Add a new category…</MenuItem>
               </TextField>
-
-              {draft.categoryId === NEW_CATEGORY && (
-                <TextField
-                  label="New category name"
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  size="small"
-                  required
-                />
-              )}
 
               {draft.kind === 'expense' && (
                 <TextField
@@ -271,7 +262,6 @@ export function TransactionFormDialog({
                   }
                   size="small"
                   required
-                  helperText="What this expense is for (stored in this browser — prototype)"
                 >
                   {expensePurposes.map((purpose) => (
                     <MenuItem key={purpose.id} value={String(purpose.id)}>
@@ -299,7 +289,7 @@ export function TransactionFormDialog({
                 onChange={(e) => {
                   const typeId = e.target.value;
                   const subs = typeId
-                    ? subtypesForType(Number(typeId))
+                    ? subtypesForType(allCashSubtypes, Number(typeId))
                     : [];
                   setDraft({
                     ...draft,

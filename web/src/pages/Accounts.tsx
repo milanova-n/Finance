@@ -25,6 +25,10 @@ import SavingsOutlinedIcon from '@mui/icons-material/SavingsOutlined';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { api } from '../services/api';
 import {
+  fetchCashMovements,
+  type CashMovementRow,
+} from '../utils/cashMovementsApi';
+import {
   accountCashMovementStats,
   accountCashflowAmount,
   accountDisplayBalance,
@@ -32,12 +36,14 @@ import {
   latestAccountActivity,
 } from '../utils/accountStats';
 import { money } from '../utils/format';
+import { periodLabel } from '../utils/reconciliationApi';
 import {
   ACCOUNT_KINDS,
   type Account,
   type AccountKind,
 } from '../types';
 import { AlertSlot } from '../components/common/AlertSlot.styles';
+import { AccountReconcileDialog } from '../features/accounts/AccountReconcileDialog';
 import { FormDialog } from '../components/common/FormDialog';
 import { Loading } from '../components/common/Loading';
 import {
@@ -128,10 +134,15 @@ export function Accounts() {
   const [formError, setFormError] = useState('');
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [menuAccount, setMenuAccount] = useState<Account | null>(null);
+  const [reconcileAccount, setReconcileAccount] = useState<Account | null>(null);
+  const [cashRows, setCashRows] = useState<CashMovementRow[]>([]);
 
   const load = useCallback(() => {
-    api<Account[]>('/accounts')
-      .then(setAccounts)
+    Promise.all([api<Account[]>('/accounts'), fetchCashMovements()])
+      .then(([accountRows, movements]) => {
+        setAccounts(accountRows);
+        setCashRows(movements);
+      })
       .catch((err) => setError(err.message));
   }, []);
 
@@ -166,6 +177,11 @@ export function Accounts() {
   function closeMenu() {
     setMenuAnchor(null);
     setMenuAccount(null);
+  }
+
+  function openReconcile(account: Account) {
+    closeMenu();
+    setReconcileAccount(account);
   }
 
   async function save(event: FormEvent) {
@@ -211,7 +227,7 @@ export function Accounts() {
 
   const currency = accounts[0]?.currency ?? 'EUR';
   const total = accounts.reduce((sum, account) => {
-    const cash = accountCashMovementStats(account.id);
+    const cash = accountCashMovementStats(account.id, cashRows);
     return sum + accountDisplayBalance(account, cash);
   }, 0);
 
@@ -221,8 +237,9 @@ export function Accounts() {
         <div>
           <PageTitle component="h1">Accounts ({money(total, currency)})</PageTitle>
           <Lede variant="body2">
-            Each balance is your opening amount plus everything in, minus
-            everything out.
+            Balances follow your ledger and cash movements. After you reconcile
+            a month, the current balance stays anchored to that statement plus
+            newer activity.
           </Lede>
         </div>
       </PageHeader>
@@ -240,12 +257,17 @@ export function Accounts() {
       <Box sx={accountGridSx}>
         {accounts.map((account) => {
           const KindIcon = KIND_ICONS[account.kind];
-          const cash = accountCashMovementStats(account.id);
+          const cash = accountCashMovementStats(account.id, cashRows);
           const lastActivity = formatLatestAccountActivity(
             latestAccountActivity(account, cash)
           );
           const cashflow = accountCashflowAmount(cash);
           const currentBalance = accountDisplayBalance(account, cash);
+          const adjustmentTotal = account.adjustmentsTotal ?? 0;
+          const reconciledThrough = account.reconciledThrough;
+          const balanceCaption = reconciledThrough
+            ? `Reconciled through ${periodLabel(reconciledThrough)}`
+            : lastActivity;
 
           return (
             <Card
@@ -323,12 +345,20 @@ export function Accounts() {
                   amount={cashflow}
                   currency={account.currency}
                 />
+                {Math.abs(adjustmentTotal) >= 0.005 ? (
+                  <AccountStatRow
+                    label="Reconciliation adjustments"
+                    amount={adjustmentTotal}
+                    currency={account.currency}
+                    flow={adjustmentTotal >= 0 ? 'earn' : 'spend'}
+                  />
+                ) : null}
                 <Divider />
                 <AccountStatRow
                   label="Current balance"
                   amount={currentBalance}
                   currency={account.currency}
-                  activityDates={lastActivity}
+                  activityDates={balanceCaption}
                 />
               </Stack>
             </Card>
@@ -383,6 +413,9 @@ export function Accounts() {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
+        <MenuItem onClick={() => menuAccount && openReconcile(menuAccount)}>
+          Reconcile month
+        </MenuItem>
         <MenuItem onClick={() => menuAccount && openEdit(menuAccount)}>
           Edit
         </MenuItem>
@@ -393,6 +426,13 @@ export function Accounts() {
           Delete
         </MenuItem>
       </Menu>
+
+      <AccountReconcileDialog
+        open={reconcileAccount !== null}
+        account={reconcileAccount}
+        onClose={() => setReconcileAccount(null)}
+        onSaved={load}
+      />
 
       <FormDialog
         open={open}

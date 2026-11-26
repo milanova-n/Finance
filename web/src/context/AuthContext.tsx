@@ -13,11 +13,12 @@ import type { User } from '../types';
 type AuthValue = {
   user: User | null;
   ready: boolean;
-  signIn: (username: string, password: string) => Promise<void>;
+  signIn: (login: string, password: string) => Promise<void>;
   register: (
     fullName: string,
-    username: string,
-    password: string
+    email: string,
+    password: string,
+    username?: string
   ) => Promise<void>;
   signOut: () => void;
 };
@@ -46,22 +47,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sessionExpired.removeEventListener('expired', drop);
   }, []);
 
-  const signIn = useCallback(async (username: string, password: string) => {
+  const signIn = useCallback(async (login: string, password: string) => {
     const result = await api<{ token: string; user: User }>('/auth/login', {
       method: 'POST',
-      body: { username, password },
+      body: { login, password },
     });
     tokenStore.set(result.token);
     setUser(result.user);
   }, []);
 
   const register = useCallback(
-    async (fullName: string, username: string, password: string) => {
+    async (
+      fullName: string,
+      email: string,
+      password: string,
+      username?: string
+    ) => {
       const result = await api<{ token: string; user: User }>(
         '/auth/register',
         {
           method: 'POST',
-          body: { fullName, username, password },
+          body: {
+            fullName,
+            email,
+            password,
+            ...(username ? { username } : {}),
+          },
         }
       );
       tokenStore.set(result.token);

@@ -119,8 +119,13 @@ export function Settings() {
                     {user.fullName}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    @{user.username}
+                    {user.email}
                   </Typography>
+                  {user.username && (
+                    <Typography variant="body2" color="text.secondary">
+                      @{user.username}
+                    </Typography>
+                  )}
                 </Box>
               </Stack>
               <Divider />
